@@ -1,0 +1,16 @@
+{
+  "fatherSurname": "FATHER",
+  "fatherGivenNames": "TEST",
+  "fatherDobDay": "01",
+  "fatherDobMonth": "JAN",
+  "fatherDobYear": "1960",
+  "fatherLiveInUs": "NO",
+  "motherSurname": "MOTHER",
+  "motherGivenNames": "TEST",
+  "motherDobDay": "01",
+  "motherDobMonth": "JAN",
+  "motherDobYear": "1962",
+  "motherLiveInUs": "NO",
+  "immediateUsRelative": "NO",
+  "otherUsRelative": "NO"
+}

@@ -1,0 +1,21 @@
+{
+  "name": "ds160-automation",
+  "version": "1.0.0",
+  "description": "Puppeteer boilerplate for assisting with a DS-160 application",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "check": "node --check src/index.js",
+    "api": "node src/api-server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "puppeteer": "^25.5.0"
+  }
+}

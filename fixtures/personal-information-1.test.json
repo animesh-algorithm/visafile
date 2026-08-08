@@ -1,0 +1,18 @@
+{
+  "surname": "TEST",
+  "givenNames": "APPLICANT",
+  "fullNameNativeAlphabetDoesNotApply": true,
+  "otherNamesUsed": "NO",
+  "telecodeNameUsed": "NO",
+  "sex": "MALE",
+  "maritalStatus": "SINGLE",
+  "dateOfBirth": {
+    "day": "01",
+    "month": "JAN",
+    "year": "1990"
+  },
+  "cityOfBirth": "HYDERABAD",
+  "stateProvinceOfBirth": "TELANGANA",
+  "stateProvinceOfBirthDoesNotApply": false,
+  "countryRegionOfBirth": "INDIA"
+}

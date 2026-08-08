@@ -1,0 +1,12 @@
+{
+  "otherPersonsTravelingWithYou": "NO",
+  "travelingAsGroup": "NO",
+  "groupName": "TEST TOUR GROUP",
+  "companions": [
+    {
+      "surname": "COMPANION",
+      "givenNames": "TEST",
+      "relationship": "FRIEND"
+    }
+  ]
+}

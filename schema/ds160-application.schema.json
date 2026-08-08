@@ -1,0 +1,986 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.ds160/schema/ds160-application.schema.json",
+  "title": "Ds160Application",
+  "description": "DS-160 applicant data contract shared by frontend, backend, and Puppeteer worker. Section keys mirror CEAC pages; property names match fixtures/*.test.json. Enums use CEAC wire values from data/*.fields.json inventories.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "meta",
+    "personalInformation1",
+    "personalInformation2",
+    "travelInformation",
+    "travelCompanions",
+    "previousUsTravel",
+    "addressPhone",
+    "passport",
+    "usContact",
+    "family",
+    "workEducation",
+    "previousWorkEducation",
+    "additionalWorkEducation",
+    "securityBackground",
+    "signSubmit"
+  ],
+  "properties": {
+    "meta": { "$ref": "#/$defs/Ds160Meta" },
+    "personalInformation1": { "$ref": "#/$defs/PersonalInformation1" },
+    "personalInformation2": { "$ref": "#/$defs/PersonalInformation2" },
+    "travelInformation": { "$ref": "#/$defs/TravelInformation" },
+    "travelCompanions": { "$ref": "#/$defs/TravelCompanions" },
+    "previousUsTravel": { "$ref": "#/$defs/PreviousUsTravel" },
+    "addressPhone": { "$ref": "#/$defs/AddressPhone" },
+    "passport": { "$ref": "#/$defs/Passport" },
+    "usContact": { "$ref": "#/$defs/UsContact" },
+    "family": { "$ref": "#/$defs/Family" },
+    "workEducation": { "$ref": "#/$defs/WorkEducation" },
+    "previousWorkEducation": { "$ref": "#/$defs/PreviousWorkEducation" },
+    "additionalWorkEducation": { "$ref": "#/$defs/AdditionalWorkEducation" },
+    "securityBackground": { "$ref": "#/$defs/SecurityBackground" },
+    "signSubmit": { "$ref": "#/$defs/SignSubmit" }
+  },
+  "$defs": {
+    "YesNo": {
+      "type": "string",
+      "enum": ["YES", "NO"]
+    },
+    "DayPad": {
+      "type": "string",
+      "pattern": "^(0[1-9]|[12][0-9]|3[01])$"
+    },
+    "DayNum": {
+      "type": "string",
+      "pattern": "^([1-9]|[12][0-9]|3[01])$"
+    },
+    "MonthCode": {
+      "type": "string",
+      "enum": ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
+    },
+    "MonthNum": {
+      "type": "string",
+      "enum": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]
+    },
+    "MonthPad": {
+      "type": "string",
+      "enum": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
+    },
+    "Year": {
+      "type": "string",
+      "pattern": "^[0-9]{4}$"
+    },
+    "CountryCode": {
+      "type": "string",
+      "minLength": 1,
+      "description": "CEAC country/region wire code (e.g. IND). Full lists in data/*.fields.json."
+    },
+    "UsStateCode": {
+      "type": "string",
+      "minLength": 1,
+      "description": "US state/territory code (e.g. NY)."
+    },
+    "DatePartsMonthCode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["day", "month", "year"],
+      "properties": {
+        "day": { "$ref": "#/$defs/DayPad" },
+        "month": { "$ref": "#/$defs/MonthCode" },
+        "year": { "$ref": "#/$defs/Year" }
+      }
+    },
+    "DatePartsMonthNum": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["day", "month", "year"],
+      "properties": {
+        "day": { "$ref": "#/$defs/DayNum" },
+        "month": { "$ref": "#/$defs/MonthNum" },
+        "year": { "$ref": "#/$defs/Year" }
+      }
+    },
+    "YesNoExplain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["answer"],
+      "properties": {
+        "answer": { "$ref": "#/$defs/YesNo" },
+        "explain": { "type": "string", "minLength": 1 }
+      },
+      "if": {
+        "properties": { "answer": { "const": "YES" } },
+        "required": ["answer"]
+      },
+      "then": { "required": ["answer", "explain"] }
+    },
+    "Sex": {
+      "type": "string",
+      "enum": ["M", "F"],
+      "description": "ddlAPP_GENDER wire values. Labels: MALE/FEMALE."
+    },
+    "MaritalStatus": {
+      "type": "string",
+      "enum": ["M", "C", "P", "S", "W", "D", "L", "O"],
+      "description": "ddlAPP_MARITAL_STATUS: M Married, C Common law, P Civil union, S Single, W Widowed, D Divorced, L Legally separated, O Other."
+    },
+    "PurposeOfTrip": {
+      "type": "string",
+      "enum": [
+        "A", "B", "C", "CNMI", "D", "E", "F", "G", "H", "I", "J", "K", "L",
+        "M", "N", "NATO", "O", "P", "Q", "R", "S", "T", "TD/TN", "U", "PAROLE-BEN"
+      ]
+    },
+    "OtherPurpose": {
+      "type": "string",
+      "minLength": 1,
+      "description": "ddlOtherPurpose; depends on purposeOfTrip. B-class: B1-B2, B1-CF, B2-TM."
+    },
+    "LengthOfStayUnit": {
+      "type": "string",
+      "enum": ["Y", "M", "W", "D", "H"]
+    },
+    "PayingForTrip": {
+      "type": "string",
+      "enum": ["S", "O", "P", "U", "C"],
+      "description": "S Self, O Other Person, P Present Employer, U US Employer, C Other Company."
+    },
+    "CompanionRelationship": {
+      "type": "string",
+      "enum": ["P", "S", "C", "R", "F", "B", "O"],
+      "description": "ddlTCRelationship. Friend = F."
+    },
+    "UsContactRelationship": {
+      "type": "string",
+      "enum": ["R", "S", "C", "B", "P", "H", "O"],
+      "description": "ddlUS_POC_REL_TO_APP. Friend = C (not F)."
+    },
+    "PassportType": {
+      "type": "string",
+      "enum": ["R", "O", "D", "L", "T"]
+    },
+    "Occupation": {
+      "type": "string",
+      "enum": [
+        "A", "AP", "B", "CM", "CS", "C", "ED", "EN", "G", "H", "LP", "MH",
+        "M", "NS", "N", "PS", "RV", "R", "RT", "SS", "S", "O"
+      ]
+    },
+    "SocialMediaPlatform": {
+      "type": "string",
+      "enum": [
+        "ASKF", "DUBN", "FCBK", "FLKR", "GOGL", "INST", "LINK", "MYSP",
+        "PTST", "QZNE", "RDDT", "SWBO", "TWBO", "TUMB", "TWIT", "TWOO",
+        "VINE", "VKON", "YUKU", "YTUB", "NONE"
+      ],
+      "description": "ddlSocialMedia. Do not send SONE (placeholder)."
+    },
+    "LengthOfStay": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["duration", "unit"],
+      "properties": {
+        "duration": { "type": "string", "minLength": 1 },
+        "unit": { "$ref": "#/$defs/LengthOfStayUnit" }
+      }
+    },
+    "TravelUsAddress": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["street", "city", "state"],
+      "properties": {
+        "street": { "type": "string", "minLength": 1 },
+        "street2": { "type": "string" },
+        "city": { "type": "string", "minLength": 1 },
+        "state": { "type": "string", "minLength": 1 },
+        "zipCode": { "type": "string" }
+      }
+    },
+    "Ds160Meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["locationCode", "securityAnswer"],
+      "properties": {
+        "locationCode": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Consulate/post code (DS160_LOCATION), e.g. HYD."
+        },
+        "securityAnswer": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Security question answer from application start."
+        },
+        "applicationId": {
+          "type": "string",
+          "description": "CEAC Application ID when resuming."
+        },
+        "allowSubmit": {
+          "type": "boolean",
+          "default": false,
+          "description": "When true, worker may click Sign and Submit."
+        }
+      }
+    },
+    "PersonalInformation1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "surname",
+        "givenNames",
+        "fullNameNativeAlphabetDoesNotApply",
+        "otherNamesUsed",
+        "telecodeNameUsed",
+        "sex",
+        "maritalStatus",
+        "dateOfBirth",
+        "cityOfBirth",
+        "stateProvinceOfBirthDoesNotApply",
+        "countryRegionOfBirth"
+      ],
+      "properties": {
+        "surname": { "type": "string", "minLength": 1, "description": "tbxAPP_SURNAME" },
+        "givenNames": { "type": "string", "minLength": 1, "description": "tbxAPP_GIVEN_NAME" },
+        "fullNameNativeAlphabetDoesNotApply": {
+          "type": "boolean",
+          "description": "cbexAPP_FULL_NAME_NATIVE_NA"
+        },
+        "fullNameNativeAlphabet": {
+          "type": "string",
+          "description": "tbxAPP_FULL_NAME_NATIVE — required when DNA is false"
+        },
+        "otherNamesUsed": { "$ref": "#/$defs/YesNo", "description": "rblOtherNames" },
+        "otherNames": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["surname", "givenNames"],
+            "properties": {
+              "surname": { "type": "string" },
+              "givenNames": { "type": "string" }
+            }
+          }
+        },
+        "telecodeNameUsed": { "$ref": "#/$defs/YesNo", "description": "rblTelecodeQuestion" },
+        "telecodeSurname": { "type": "string" },
+        "telecodeGivenNames": { "type": "string" },
+        "sex": { "$ref": "#/$defs/Sex" },
+        "maritalStatus": { "$ref": "#/$defs/MaritalStatus" },
+        "dateOfBirth": { "$ref": "#/$defs/DatePartsMonthCode" },
+        "cityOfBirth": { "type": "string", "minLength": 1 },
+        "stateProvinceOfBirth": { "type": "string" },
+        "stateProvinceOfBirthDoesNotApply": { "type": "boolean" },
+        "countryRegionOfBirth": { "$ref": "#/$defs/CountryCode" }
+      }
+    },
+    "PersonalInformation2": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "nationality",
+        "hasOtherNationality",
+        "isPermanentResidentOfOtherCountry",
+        "hasSSN",
+        "hasTaxpayerID"
+      ],
+      "properties": {
+        "nationality": { "$ref": "#/$defs/CountryCode", "description": "ddlAPP_NATL" },
+        "hasOtherNationality": { "$ref": "#/$defs/YesNo", "description": "rblAPP_OTH_NATL_IND" },
+        "otherNationalities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["nationality", "hasPassport"],
+            "properties": {
+              "nationality": { "$ref": "#/$defs/CountryCode" },
+              "hasPassport": { "$ref": "#/$defs/YesNo" },
+              "passportNumber": { "type": "string" }
+            }
+          }
+        },
+        "isPermanentResidentOfOtherCountry": {
+          "$ref": "#/$defs/YesNo",
+          "description": "rblPermResOtherCntryInd"
+        },
+        "permanentResidentCountries": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/CountryCode" }
+        },
+        "nationalIdentificationNumber": {
+          "type": "string",
+          "description": "tbxAPP_NATIONAL_ID"
+        },
+        "nationalIdentificationNumberDoesNotApply": {
+          "type": "boolean",
+          "description": "cbexAPP_NATIONAL_ID_NA"
+        },
+        "hasSSN": { "$ref": "#/$defs/YesNo" },
+        "ssn": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["area", "group", "serial"],
+          "properties": {
+            "area": { "type": "string", "description": "tbxAPP_SSN1" },
+            "group": { "type": "string", "description": "tbxAPP_SSN2" },
+            "serial": { "type": "string", "description": "tbxAPP_SSN3" }
+          }
+        },
+        "hasTaxpayerID": { "$ref": "#/$defs/YesNo" },
+        "taxpayerId": { "type": "string", "description": "tbxAPP_TAX_ID" }
+      }
+    },
+    "TravelInformation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["purposeOfTrip", "otherPurpose", "hasSpecificTravelPlans", "payingForTrip"],
+      "properties": {
+        "purposeOfTrip": { "$ref": "#/$defs/PurposeOfTrip" },
+        "otherPurpose": { "$ref": "#/$defs/OtherPurpose" },
+        "hasSpecificTravelPlans": { "$ref": "#/$defs/YesNo", "description": "rblSpecificTravel" },
+        "arrivalFlight": { "type": "string" },
+        "arrivalCity": { "type": "string" },
+        "departureDate": { "$ref": "#/$defs/DatePartsMonthNum" },
+        "departureFlight": { "type": "string" },
+        "departureCity": { "type": "string" },
+        "locationsToVisit": { "type": "array", "items": { "type": "string" } },
+        "arrivalDate": {
+          "$ref": "#/$defs/DatePartsMonthNum",
+          "description": "ddlTRAVEL_DTE* — month is numeric wire value 1–12"
+        },
+        "lengthOfStay": { "$ref": "#/$defs/LengthOfStay" },
+        "usAddress": { "$ref": "#/$defs/TravelUsAddress" },
+        "payingForTrip": { "$ref": "#/$defs/PayingForTrip" },
+        "payer": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "surname": { "type": "string" },
+            "givenNames": { "type": "string" },
+            "phone": { "type": "string" },
+            "email": { "type": "string" },
+            "relationship": { "type": "string" },
+            "address": {
+              "allOf": [
+                { "$ref": "#/$defs/TravelUsAddress" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "country": { "$ref": "#/$defs/CountryCode" }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "TravelCompanion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["surname", "givenNames", "relationship"],
+      "properties": {
+        "surname": { "type": "string", "minLength": 1 },
+        "givenNames": { "type": "string", "minLength": 1 },
+        "relationship": { "$ref": "#/$defs/CompanionRelationship" }
+      }
+    },
+    "TravelCompanions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["otherPersonsTravelingWithYou"],
+      "properties": {
+        "otherPersonsTravelingWithYou": {
+          "$ref": "#/$defs/YesNo",
+          "description": "rblOtherPersonsTravelingWithYou"
+        },
+        "travelingAsGroup": { "$ref": "#/$defs/YesNo", "description": "rblGroupTravel" },
+        "groupName": { "type": "string", "description": "tbxGroupName" },
+        "companions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/TravelCompanion" }
+        }
+      }
+    },
+    "PreviousUsTravel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["beenToUs", "visaIssued", "immigrantPetition"],
+      "properties": {
+        "beenToUs": { "$ref": "#/$defs/YesNo", "description": "rblPREV_US_TRAVEL_IND" },
+        "previousVisits": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["arrivalDate", "lengthOfStay"],
+            "properties": {
+              "arrivalDate": { "$ref": "#/$defs/DatePartsMonthCode" },
+              "lengthOfStay": { "$ref": "#/$defs/LengthOfStay" }
+            }
+          }
+        },
+        "hasUsDriversLicense": { "$ref": "#/$defs/YesNo" },
+        "usDriversLicenses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["number", "state"],
+            "properties": {
+              "number": { "type": "string" },
+              "state": { "$ref": "#/$defs/UsStateCode" }
+            }
+          }
+        },
+        "visaIssued": { "$ref": "#/$defs/YesNo", "description": "rblPREV_VISA_IND" },
+        "lastVisa": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["issuedDate", "sameType", "sameLocation", "tenPrinted"],
+          "properties": {
+            "issuedDate": { "$ref": "#/$defs/DatePartsMonthCode" },
+            "visaNumber": { "type": "string" },
+            "sameType": { "$ref": "#/$defs/YesNo" },
+            "sameLocation": { "$ref": "#/$defs/YesNo" },
+            "tenPrinted": { "$ref": "#/$defs/YesNo" }
+          }
+        },
+        "visaLostStolen": { "$ref": "#/$defs/YesNo", "description": "rblPREV_VISA_LOST_IND" },
+        "visaLostStolenExplain": { "type": "string" },
+        "visaCancelled": { "$ref": "#/$defs/YesNo", "description": "rblPREV_VISA_CANCELLED_IND" },
+        "visaCancelledExplain": { "type": "string" },
+        "visaRefused": { "$ref": "#/$defs/YesNo", "description": "rblPREV_VISA_REFUSED_IND" },
+        "visaRefusedExplain": { "type": "string" },
+        "immigrantPetition": {
+          "$ref": "#/$defs/YesNo",
+          "description": "rblIV_PETITION_IND"
+        },
+        "immigrantPetitionExplain": { "type": "string" }
+      }
+    },
+    "AddressPhone": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "street",
+        "city",
+        "country",
+        "mailingSameAsHome",
+        "primaryPhone",
+        "email",
+        "additionalPhone",
+        "additionalEmail",
+        "socialMedia"
+      ],
+      "properties": {
+        "street": { "type": "string", "minLength": 1, "description": "tbxAPP_ADDR_LN1" },
+        "street2": { "type": "string" },
+        "city": { "type": "string", "minLength": 1 },
+        "state": { "type": "string" },
+        "stateDoesNotApply": { "type": "boolean" },
+        "postalCode": { "type": "string" },
+        "postalCodeDoesNotApply": { "type": "boolean" },
+        "country": { "$ref": "#/$defs/CountryCode" },
+        "mailingSameAsHome": { "$ref": "#/$defs/YesNo", "description": "rblMailingAddrSame" },
+        "mailingAddress": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["street", "city", "country"],
+          "properties": {
+            "street": { "type": "string" },
+            "street2": { "type": "string" },
+            "city": { "type": "string" },
+            "state": { "type": "string" },
+            "stateDoesNotApply": { "type": "boolean" },
+            "postalCode": { "type": "string" },
+            "postalCodeDoesNotApply": { "type": "boolean" },
+            "country": { "$ref": "#/$defs/CountryCode" }
+          }
+        },
+        "primaryPhone": { "type": "string", "minLength": 1, "description": "tbxAPP_HOME_TEL" },
+        "workPhoneDoesNotApply": { "type": "boolean" },
+        "workPhone": { "type": "string" },
+        "secondaryPhoneDoesNotApply": { "type": "boolean" },
+        "secondaryPhone": { "type": "string" },
+        "email": { "type": "string", "minLength": 1, "description": "tbxAPP_EMAIL_ADDR" },
+        "additionalPhone": { "$ref": "#/$defs/YesNo", "description": "rblAddPhone" },
+        "additionalPhones": { "type": "array", "items": { "type": "string" } },
+        "additionalEmail": { "$ref": "#/$defs/YesNo", "description": "rblAddEmail" },
+        "additionalEmails": { "type": "array", "items": { "type": "string" } },
+        "socialMedia": { "$ref": "#/$defs/YesNo", "description": "rblAddSocial" },
+        "socialMediaPlatform": { "$ref": "#/$defs/SocialMediaPlatform" },
+        "socialMediaIdentifier": { "type": "string" },
+        "socialMediaAccounts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["platform", "identifier"],
+            "properties": {
+              "platform": { "$ref": "#/$defs/SocialMediaPlatform" },
+              "identifier": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "Passport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "passportType",
+        "passportNumber",
+        "issuedCountry",
+        "issuedCity",
+        "issuedState",
+        "issuedInCountry",
+        "issuedDay",
+        "issuedMonth",
+        "issuedYear",
+        "expireDay",
+        "expireMonth",
+        "expireYear",
+        "lostStolen"
+      ],
+      "properties": {
+        "passportType": { "$ref": "#/$defs/PassportType" },
+        "passportNumber": { "type": "string", "minLength": 1, "description": "tbxPPT_NUM" },
+        "bookNumberDoesNotApply": { "type": "boolean" },
+        "bookNumber": { "type": "string" },
+        "issuedCountry": { "$ref": "#/$defs/CountryCode" },
+        "issuedCity": { "type": "string", "minLength": 1 },
+        "issuedState": { "type": "string", "minLength": 1 },
+        "issuedInCountry": { "$ref": "#/$defs/CountryCode" },
+        "issuedDay": { "$ref": "#/$defs/DayPad" },
+        "issuedMonth": {
+          "anyOf": [
+            { "$ref": "#/$defs/MonthPad" },
+            { "$ref": "#/$defs/MonthCode" }
+          ],
+          "description": "Prefer MonthPad wire values 01–12; MonthCode labels also accepted by worker."
+        },
+        "issuedYear": { "$ref": "#/$defs/Year" },
+        "expireDay": { "$ref": "#/$defs/DayPad" },
+        "expireMonth": {
+          "anyOf": [
+            { "$ref": "#/$defs/MonthPad" },
+            { "$ref": "#/$defs/MonthCode" }
+          ]
+        },
+        "expireYear": { "$ref": "#/$defs/Year" },
+        "lostStolen": { "$ref": "#/$defs/YesNo", "description": "rblLOST_PPT_IND" },
+        "lostStolenDetails": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["country", "explain"],
+            "properties": {
+              "number": { "type": "string" },
+              "numberDoesNotApply": { "type": "boolean" },
+              "country": { "$ref": "#/$defs/CountryCode" },
+              "explain": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "UsContact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["relationship", "street", "city", "state", "postalCode", "phone"],
+      "properties": {
+        "surname": { "type": "string", "description": "tbxUS_POC_SURNAME" },
+        "givenNames": { "type": "string", "description": "tbxUS_POC_GIVEN_NAME" },
+        "nameDoesNotApply": { "type": "boolean", "description": "cbxUS_POC_NAME_NA" },
+        "organization": { "type": "string", "description": "tbxUS_POC_ORGANIZATION" },
+        "organizationDoesNotApply": {
+          "type": "boolean",
+          "description": "cbxUS_POC_ORG_NA_IND"
+        },
+        "relationship": { "$ref": "#/$defs/UsContactRelationship" },
+        "street": { "type": "string", "minLength": 1 },
+        "street2": { "type": "string" },
+        "city": { "type": "string", "minLength": 1 },
+        "state": { "$ref": "#/$defs/UsStateCode" },
+        "postalCode": { "type": "string", "minLength": 1 },
+        "phone": { "type": "string", "minLength": 1 },
+        "email": { "type": "string" },
+        "emailDoesNotApply": { "type": "boolean" }
+      }
+    },
+    "Family": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fatherLiveInUs",
+        "motherLiveInUs",
+        "immediateUsRelative",
+        "otherUsRelative"
+      ],
+      "properties": {
+        "fatherSurname": { "type": "string" },
+        "fatherSurnameUnknown": { "type": "boolean" },
+        "fatherGivenNames": { "type": "string" },
+        "fatherGivenNamesUnknown": { "type": "boolean" },
+        "fatherDobDay": { "$ref": "#/$defs/DayPad" },
+        "fatherDobMonth": { "$ref": "#/$defs/MonthCode" },
+        "fatherDobYear": { "$ref": "#/$defs/Year" },
+        "fatherDobUnknown": { "type": "boolean" },
+        "fatherLiveInUs": { "$ref": "#/$defs/YesNo" },
+        "fatherUsStatus": { "type": "string" },
+        "motherSurname": { "type": "string" },
+        "motherSurnameUnknown": { "type": "boolean" },
+        "motherGivenNames": { "type": "string" },
+        "motherGivenNamesUnknown": { "type": "boolean" },
+        "motherDobDay": { "$ref": "#/$defs/DayPad" },
+        "motherDobMonth": { "$ref": "#/$defs/MonthCode" },
+        "motherDobYear": { "$ref": "#/$defs/Year" },
+        "motherDobUnknown": { "type": "boolean" },
+        "motherLiveInUs": { "$ref": "#/$defs/YesNo" },
+        "motherUsStatus": { "type": "string" },
+        "immediateUsRelative": {
+          "$ref": "#/$defs/YesNo",
+          "description": "rblUS_IMMED_RELATIVE_IND"
+        },
+        "immediateRelatives": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["surname", "givenNames", "relationship", "status"],
+            "properties": {
+              "surname": { "type": "string" },
+              "givenNames": { "type": "string" },
+              "relationship": { "type": "string" },
+              "status": { "type": "string" }
+            }
+          }
+        },
+        "otherUsRelative": {
+          "$ref": "#/$defs/YesNo",
+          "description": "rblUS_OTHER_RELATIVE_IND"
+        }
+      }
+    },
+    "WorkEducation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["occupation"],
+      "properties": {
+        "occupation": { "$ref": "#/$defs/Occupation" },
+        "notEmployedExplain": {
+          "type": "string",
+          "description": "tbxExplainOtherPresentOccupation — for N/O/RT/etc."
+        },
+        "employerName": { "type": "string" },
+        "employerStreet": { "type": "string" },
+        "employerCity": { "type": "string" },
+        "employerState": { "type": "string" },
+        "employerStateDoesNotApply": { "type": "boolean" },
+        "employerPostalCode": { "type": "string" },
+        "employerPostalCodeDoesNotApply": { "type": "boolean" },
+        "employerCountry": { "$ref": "#/$defs/CountryCode" },
+        "employerPhone": { "type": "string" },
+        "jobTitle": { "type": "string" },
+        "startDate": { "$ref": "#/$defs/DatePartsMonthCode" },
+        "monthlyIncome": { "type": "string" },
+        "duties": { "type": "string" },
+        "previouslyEmployed": { "$ref": "#/$defs/YesNo" },
+        "otherEducation": { "$ref": "#/$defs/YesNo" }
+      }
+    },
+    "PreviousEmployer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "street": { "type": "string" },
+        "city": { "type": "string" },
+        "state": { "type": "string" },
+        "postalCode": { "type": "string" },
+        "country": { "$ref": "#/$defs/CountryCode" },
+        "phone": { "type": "string" },
+        "jobTitle": { "type": "string" },
+        "supervisorSurname": { "type": "string" },
+        "supervisorGivenNames": { "type": "string" },
+        "startDate": { "$ref": "#/$defs/DatePartsMonthCode" },
+        "endDate": { "$ref": "#/$defs/DatePartsMonthCode" },
+        "duties": { "type": "string" }
+      }
+    },
+    "PreviousSchool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "street": { "type": "string" },
+        "city": { "type": "string" },
+        "state": { "type": "string" },
+        "postalCode": { "type": "string" },
+        "country": { "$ref": "#/$defs/CountryCode" },
+        "courseOfStudy": { "type": "string" },
+        "startDate": { "$ref": "#/$defs/DatePartsMonthCode" },
+        "endDate": { "$ref": "#/$defs/DatePartsMonthCode" }
+      }
+    },
+    "PreviousWorkEducation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["previouslyEmployed", "otherEducation"],
+      "properties": {
+        "previouslyEmployed": {
+          "$ref": "#/$defs/YesNo",
+          "description": "rblPreviouslyEmployed"
+        },
+        "employers": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/PreviousEmployer" }
+        },
+        "otherEducation": { "$ref": "#/$defs/YesNo", "description": "rblOtherEduc" },
+        "schools": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/PreviousSchool" }
+        }
+      }
+    },
+    "AdditionalWorkEducation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "clanOrTribe",
+        "languages",
+        "countriesVisited",
+        "organization",
+        "specializedSkills",
+        "militaryService",
+        "insurgentOrg"
+      ],
+      "properties": {
+        "clanOrTribe": { "$ref": "#/$defs/YesNo", "description": "rblCLAN_TRIBE_IND" },
+        "clanOrTribeName": { "type": "string" },
+        "languages": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Worker currently fills languages[0] only."
+        },
+        "countriesVisited": {
+          "$ref": "#/$defs/YesNo",
+          "description": "rblCOUNTRIES_VISITED_IND"
+        },
+        "countriesVisitedList": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/CountryCode" }
+        },
+        "organization": { "$ref": "#/$defs/YesNo", "description": "rblORGANIZATION_IND" },
+        "organizations": { "type": "array", "items": { "type": "string" } },
+        "specializedSkills": {
+          "$ref": "#/$defs/YesNo",
+          "description": "rblSPECIALIZED_SKILLS_IND"
+        },
+        "specializedSkillsExplain": { "type": "string" },
+        "militaryService": {
+          "$ref": "#/$defs/YesNo",
+          "description": "rblMILITARY_SERVICE_IND"
+        },
+        "militaryServiceDetails": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["country", "branch", "rank", "specialty", "startDate", "endDate"],
+            "properties": {
+              "country": { "$ref": "#/$defs/CountryCode" },
+              "branch": { "type": "string" },
+              "rank": { "type": "string" },
+              "specialty": { "type": "string" },
+              "startDate": { "$ref": "#/$defs/DatePartsMonthCode" },
+              "endDate": { "$ref": "#/$defs/DatePartsMonthCode" }
+            }
+          }
+        },
+        "insurgentOrg": { "$ref": "#/$defs/YesNo", "description": "rblINSURGENT_ORG_IND" },
+        "insurgentOrgExplain": { "type": "string" }
+      }
+    },
+    "SecurityBackgroundPart1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["disease", "disorder", "drugUser"],
+      "properties": {
+        "disease": { "$ref": "#/$defs/YesNoExplain", "description": "rblDisease" },
+        "disorder": { "$ref": "#/$defs/YesNoExplain", "description": "rblDisorder" },
+        "drugUser": { "$ref": "#/$defs/YesNoExplain", "description": "rblDruguser" }
+      }
+    },
+    "SecurityBackgroundPart2": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "arrested",
+        "controlledSubstances",
+        "prostitution",
+        "moneyLaundering",
+        "humanTrafficking",
+        "assistedSevereTrafficking",
+        "humanTraffickingRelated"
+      ],
+      "properties": {
+        "arrested": { "$ref": "#/$defs/YesNoExplain" },
+        "controlledSubstances": { "$ref": "#/$defs/YesNoExplain" },
+        "prostitution": { "$ref": "#/$defs/YesNoExplain" },
+        "moneyLaundering": { "$ref": "#/$defs/YesNoExplain" },
+        "humanTrafficking": { "$ref": "#/$defs/YesNoExplain" },
+        "assistedSevereTrafficking": { "$ref": "#/$defs/YesNoExplain" },
+        "humanTraffickingRelated": { "$ref": "#/$defs/YesNoExplain" }
+      }
+    },
+    "SecurityBackgroundPart3": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "illegalActivity",
+        "terroristActivity",
+        "terroristSupport",
+        "terroristOrg",
+        "terroristRel",
+        "genocide",
+        "torture",
+        "exViolence",
+        "childSoldier",
+        "religiousFreedom",
+        "populationControls",
+        "transplant"
+      ],
+      "properties": {
+        "illegalActivity": { "$ref": "#/$defs/YesNoExplain" },
+        "terroristActivity": { "$ref": "#/$defs/YesNoExplain" },
+        "terroristSupport": { "$ref": "#/$defs/YesNoExplain" },
+        "terroristOrg": { "$ref": "#/$defs/YesNoExplain" },
+        "terroristRel": { "$ref": "#/$defs/YesNoExplain" },
+        "genocide": { "$ref": "#/$defs/YesNoExplain" },
+        "torture": { "$ref": "#/$defs/YesNoExplain" },
+        "exViolence": { "$ref": "#/$defs/YesNoExplain" },
+        "childSoldier": { "$ref": "#/$defs/YesNoExplain" },
+        "religiousFreedom": { "$ref": "#/$defs/YesNoExplain" },
+        "populationControls": { "$ref": "#/$defs/YesNoExplain" },
+        "transplant": { "$ref": "#/$defs/YesNoExplain" }
+      }
+    },
+    "SecurityBackgroundPart4": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["immigrationFraud", "deport"],
+      "properties": {
+        "immigrationFraud": { "$ref": "#/$defs/YesNoExplain" },
+        "deport": { "$ref": "#/$defs/YesNoExplain" }
+      }
+    },
+    "SecurityBackgroundPart5": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["childCustody", "votingViolation", "renounceExp"],
+      "properties": {
+        "childCustody": { "$ref": "#/$defs/YesNoExplain" },
+        "votingViolation": { "$ref": "#/$defs/YesNoExplain" },
+        "renounceExp": { "$ref": "#/$defs/YesNoExplain" }
+      }
+    },
+    "SecurityBackground": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Prefer named part1–part5 answers. Worker also accepts answerRemainingYesNo + defaultYesNo.",
+      "properties": {
+        "part1": { "$ref": "#/$defs/SecurityBackgroundPart1" },
+        "part2": { "$ref": "#/$defs/SecurityBackgroundPart2" },
+        "part3": { "$ref": "#/$defs/SecurityBackgroundPart3" },
+        "part4": { "$ref": "#/$defs/SecurityBackgroundPart4" },
+        "part5": { "$ref": "#/$defs/SecurityBackgroundPart5" },
+        "answerRemainingYesNo": { "type": "boolean" },
+        "defaultYesNo": { "$ref": "#/$defs/YesNo" },
+        "radios": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/YesNo" }
+        },
+        "texts": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "selects": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "checkboxes": {
+          "type": "object",
+          "additionalProperties": { "type": "boolean" }
+        }
+      }
+    },
+    "SignSubmit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assistedByPreparer"],
+      "properties": {
+        "assistedByPreparer": { "$ref": "#/$defs/YesNo", "description": "rblPREP_IND" },
+        "passportNumber": {
+          "type": ["string", "null"],
+          "description": "PPTNumTbx. null → copy from passport.passportNumber."
+        },
+        "preparer": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "texts": {
+              "type": "object",
+              "additionalProperties": { "type": "string" }
+            },
+            "selects": {
+              "type": "object",
+              "additionalProperties": { "type": "string" }
+            },
+            "radios": {
+              "type": "object",
+              "additionalProperties": { "$ref": "#/$defs/YesNo" }
+            }
+          }
+        }
+      }
+    },
+    "ConfirmationResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Worker OUTPUT after successful submit (data/confirmation.json). Not applicant input.",
+      "required": [
+        "url",
+        "title",
+        "node",
+        "applicationId",
+        "hasBarcode",
+        "barcodeImageSrc",
+        "printAvailable",
+        "emailAvailable",
+        "familyGroupAvailable",
+        "snippet",
+        "savedAt"
+      ],
+      "properties": {
+        "url": { "type": "string" },
+        "title": { "type": "string" },
+        "node": { "type": "string" },
+        "applicationId": { "type": "string" },
+        "hasBarcode": { "type": "boolean" },
+        "barcodeImageSrc": { "type": ["string", "null"] },
+        "printAvailable": { "type": "boolean" },
+        "emailAvailable": { "type": "boolean" },
+        "familyGroupAvailable": { "type": "boolean" },
+        "snippet": { "type": "string" },
+        "pdfPath": { "type": "string" },
+        "screenshotPath": { "type": "string" },
+        "savedAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

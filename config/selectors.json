@@ -1,0 +1,97 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-08-08T14:56:26.237Z",
+  "description": "DS-160 Form Selectors for Frontend Integration",
+  
+  "captcha": {
+    "input": "#ctl00_SiteContentPlaceHolder_ucLocation_IdentifyCaptcha1_txtCodeTextBox",
+    "image": "#ctl00_SiteContentPlaceHolder_ucLocation_IdentifyCaptcha1_imgCaptcha",
+    "container": "#ctl00_SiteContentPlaceHolder_ucLocation_IdentifyCaptcha1"
+  },
+  
+  "errors": {
+    "validationSummary": "#ctl00_SiteContentPlaceHolder_ValidationSummary1",
+    "validationSummaryAlt": ".validation-summary-errors",
+    "fieldError": ".field-validation-error",
+    "errorSpan": "span.errormessage",
+    "requiredField": "span.required",
+    "errorMessages": "[id*='ValidationSummary']"
+  },
+  
+  "navigation": {
+    "startApplication": "#ctl00_SiteContentPlaceHolder_lnkNew",
+    "nextButton": "#ctl00_SiteContentPlaceHolder_UpdateButton1",
+    "saveButton": "#ctl00_SiteContentPlaceHolder_UpdateButton2",
+    "reviewButton": "#ctl00_ucNavigateOption_ucNavPanel_ctl01_btnReviewPage",
+    "completeButton": "#ctl00_ucNavigateOption_ucNavPanel_ctl01_btnNextPageComplete"
+  },
+  
+  "location": {
+    "dropdown": "#ctl00_SiteContentPlaceHolder_ucLocation_ddlLocation"
+  },
+  
+  "dialogs": {
+    "modalHolder": "#ctl00_SiteContentPlaceHolder_btnModalHolder",
+    "warningOk": "#ctl00_SiteContentPlaceHolder_btnOkWarning",
+    "exitWarning": "#ctl00_btnCancelExitWarning"
+  },
+  
+  "personalInfo": {
+    "personalInfo1": {
+      "surname": "tbxAPP_SURNAME",
+      "givenName": "tbxAPP_GIVEN_NAME",
+      "fullName": "tbxAPP_FULL_NAME_NATIVE_ALPHABET",
+      "gender": "rblAPP_GENDER",
+      "maritalStatus": "ddlAPP_MARITAL_STATUS",
+      "dateOfBirth": {
+        "day": "ddlDOBDay",
+        "month": "ddlDOBMonth",
+        "year": "tbxDOBYear"
+      },
+      "cityOfBirth": "tbxAPP_POB_CITY",
+      "stateOfBirth": "tbxAPP_POB_ST_PROVINCE",
+      "countryOfBirth": "ddlAPP_POB_CNTRY"
+    },
+    "personalInfo2": {
+      "nationality": "ddlAPP_NATL",
+      "hasOtherNationality": "rblAPP_OTH_NATL_IND",
+      "isPermanentResident": "rblPermResOtherCntryInd",
+      "nationalId": "tbxAPP_NATIONAL_ID",
+      "nationalIdNA": "cbexAPP_NATIONAL_ID_NA",
+      "ssnParts": {
+        "part1": "tbxAPP_SSN1",
+        "part2": "tbxAPP_SSN2",
+        "part3": "tbxAPP_SSN3"
+      },
+      "ssnNA": "cbexAPP_SSN_NA",
+      "taxId": "tbxAPP_TAX_ID",
+      "taxIdNA": "cbexAPP_TAX_ID_NA"
+    }
+  },
+  
+  "security": {
+    "questionDropdown": "#ctl00_SiteContentPlaceHolder_ddlQuestions",
+    "answerInput": "#ctl00_SiteContentPlaceHolder_tbSecurityAnswerConfirm",
+    "applicationId": "#ctl00_SiteContentPlaceHolder_lblApplicationIDDisplay",
+    "agreeCheckbox": "#ctl00_SiteContentPlaceHolder_cbWarnings"
+  },
+  
+  "helpers": {
+    "buildSelector": {
+      "description": "Build a selector from partial ID",
+      "template": "[id*='PARTIAL_ID']",
+      "example": "[id*='ddlNationality']"
+    }
+  },
+  
+  "usage": {
+    "javascript": {
+      "example": "const captchaInput = document.querySelector(selectors.captcha.input);",
+      "checkErrors": "const hasErrors = document.querySelector(selectors.errors.validationSummary) !== null;"
+    },
+    "puppeteer": {
+      "example": "await page.type(selectors.captcha.input, 'CAPTCHA_VALUE');",
+      "waitFor": "await page.waitForSelector(selectors.captcha.image);"
+    }
+  }
+}

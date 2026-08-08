@@ -1,0 +1,12 @@
+{
+  "surname": "CONTACT",
+  "givenNames": "TEST",
+  "organization": "TEST HOTEL",
+  "relationship": "FRIEND",
+  "street": "123 MAIN STREET",
+  "city": "NEW YORK",
+  "state": "NY",
+  "postalCode": "10001",
+  "phone": "2125550100",
+  "email": "us.contact@example.com"
+}

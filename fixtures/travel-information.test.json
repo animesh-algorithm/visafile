@@ -1,0 +1,21 @@
+{
+  "purposeOfTrip": "B",
+  "otherPurpose": "B1-B2",
+  "hasSpecificTravelPlans": "NO",
+  "arrivalDate": {
+    "day": "15",
+    "month": "12",
+    "year": "2026"
+  },
+  "lengthOfStay": {
+    "duration": "14",
+    "unit": "D"
+  },
+  "usAddress": {
+    "street": "123 Main Street",
+    "city": "New York",
+    "state": "NEW YORK",
+    "zipCode": "10001"
+  },
+  "payingForTrip": "S"
+}

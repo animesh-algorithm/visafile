@@ -1,0 +1,16 @@
+{
+  "passportType": "R",
+  "passportNumber": "X1234567",
+  "bookNumberDoesNotApply": true,
+  "issuedCountry": "IND",
+  "issuedCity": "HYDERABAD",
+  "issuedState": "TELANGANA",
+  "issuedInCountry": "IND",
+  "issuedDay": "01",
+  "issuedMonth": "JAN",
+  "issuedYear": "2020",
+  "expireDay": "01",
+  "expireMonth": "JAN",
+  "expireYear": "2030",
+  "lostStolen": "NO"
+}

@@ -1,0 +1,16 @@
+{
+  "street": "123 TEST STREET",
+  "city": "HYDERABAD",
+  "state": "TELANGANA",
+  "postalCode": "500001",
+  "country": "IND",
+  "mailingSameAsHome": "YES",
+  "primaryPhone": "9876543210",
+  "workPhoneDoesNotApply": true,
+  "secondaryPhoneDoesNotApply": true,
+  "email": "test.applicant@example.com",
+  "additionalPhone": "NO",
+  "additionalEmail": "NO",
+  "socialMedia": "NO",
+  "socialMediaPlatform": "NONE"
+}
