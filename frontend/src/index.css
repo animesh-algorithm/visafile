@@ -1,0 +1,490 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;500&display=swap");
+
+:root {
+  --ink: #152028;
+  --muted: #5a6a76;
+  --paper: #f3f1eb;
+  --panel: #fffcf7;
+  --line: #d5d0c6;
+  --accent: #0b6e4f;
+  --accent-ink: #f4fff9;
+  --danger: #9b1c1c;
+  --shadow: 0 18px 40px rgba(21, 32, 40, 0.08);
+  font-family: "DM Sans", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(1200px 500px at 10% -10%, #dceee6 0%, transparent 55%),
+    radial-gradient(900px 400px at 100% 0%, #efe6d6 0%, transparent 50%),
+    var(--paper);
+  line-height: 1.45;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+a {
+  color: var(--accent);
+}
+
+code {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.9em;
+}
+
+.page {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+}
+
+.hero {
+  margin-bottom: 1.5rem;
+}
+
+.hero.compact {
+  margin-bottom: 1rem;
+}
+
+.brand {
+  margin: 0 0 0.35rem;
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.lede {
+  margin: 0.6rem 0 0;
+  max-width: 40rem;
+  color: var(--muted);
+}
+
+.steps {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.step {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.step.active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+.step-num {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.75rem;
+  opacity: 0.75;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 1.25rem 1.35rem 1.4rem;
+  box-shadow: var(--shadow);
+  margin-bottom: 1rem;
+}
+
+.panel h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.15rem;
+}
+
+.panel.success {
+  border-color: #9dceb8;
+  background: #f2faf5;
+}
+
+.hint {
+  margin: 0 0 0.75rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.json-editor,
+.log,
+.error {
+  width: 100%;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.82rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.75rem;
+  background: #fff;
+}
+
+.json-editor {
+  min-height: 320px;
+  resize: vertical;
+}
+
+.log {
+  min-height: 140px;
+  max-height: 260px;
+  overflow: auto;
+  background: #152028;
+  color: #d7f5e6;
+  white-space: pre-wrap;
+}
+
+.error {
+  color: var(--danger);
+  background: #fff5f5;
+  white-space: pre-wrap;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+  align-items: center;
+}
+
+button,
+.actions input[type="text"] {
+  font: inherit;
+}
+
+button {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 10px;
+  padding: 0.55rem 0.95rem;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.actions input[type="text"] {
+  flex: 1;
+  min-width: 180px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.55rem 0.75rem;
+}
+
+.captcha {
+  display: block;
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin: 0.5rem 0 0.75rem;
+  background: #fff;
+}
+
+.status-pill {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: #e7f3ed;
+  color: var(--accent);
+  font-size: 0.95rem;
+}
+
+.progress {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 0;
+}
+
+.progress li {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+.progress li.done {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+.error-list {
+  margin: 0 0 0.75rem;
+  padding-left: 1.2rem;
+  color: var(--danger);
+}
+
+.fields {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.fields-grid {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 720px) {
+  .fields-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.85rem 1rem;
+  }
+
+  .fields-grid > .field-group,
+  .fields-grid > .field-array,
+  .fields-grid > .field:has(textarea),
+  .fields-grid > .field:has(.combo) {
+    grid-column: 1 / -1;
+  }
+
+  .fields-grid > .field-check {
+    grid-column: 1 / -1;
+  }
+}
+
+.field label,
+.field-group legend {
+  display: block;
+  font-weight: 600;
+  font-size: 0.92rem;
+  margin-bottom: 0.25rem;
+}
+
+.req {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.field-desc {
+  margin: 0 0 0.35rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.field-empty {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.field input[type="text"],
+.field input[type="email"],
+.field input[type="url"],
+.field input[type="tel"],
+.field input[type="date"],
+.field select,
+.array-item input,
+.combo input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.55rem 0.75rem;
+  font: inherit;
+  background: #fff;
+}
+
+.field input:focus,
+.field select:focus,
+.combo input:focus,
+.actions input:focus {
+  outline: 2px solid rgba(11, 110, 79, 0.35);
+  border-color: var(--accent);
+}
+
+.combo {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.choice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.choice-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.4rem 0.85rem;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.choice-chip input {
+  accent-color: var(--accent);
+}
+
+.choice-chip.selected {
+  border-color: var(--accent);
+  background: #e7f3ed;
+  color: var(--accent);
+}
+
+.check-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.75rem 0.9rem;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.check-card input {
+  margin-top: 0.2rem;
+  accent-color: var(--accent);
+}
+
+.check-card strong {
+  display: block;
+  font-weight: 600;
+}
+
+.check-card em {
+  display: block;
+  font-style: normal;
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 0.15rem;
+}
+
+.field-error {
+  color: var(--danger);
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
+.field-group {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.75rem 1rem 1rem;
+  margin: 0;
+}
+
+.field-array-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.array-item {
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.array-item-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+button.small {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+}
+
+button.danger {
+  color: var(--danger);
+  border-color: #e4b4b4;
+}
+
+.panel.highlight {
+  border-color: #9dceb8;
+  box-shadow: 0 0 0 1px rgba(11, 110, 79, 0.08), var(--shadow);
+}
+
+.correction-row {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  margin: 0.75rem 0;
+  background: #fff;
+}
+
+.correction-msg {
+  margin: 0 0 0.65rem;
+  color: var(--danger);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.advanced {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.advanced summary {
+  cursor: pointer;
+  margin-bottom: 0.4rem;
+}
+
+.event-log summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.event-log .log {
+  margin-top: 0.75rem;
+}
+
+@media (max-width: 640px) {
+  .brand {
+    font-size: 1.75rem;
+  }
+
+  .json-editor {
+    min-height: 240px;
+  }
+}

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DS-160 WS Test</title>
+    <style>
+      :root {
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        color: #122;
+        background: #f4f6f8;
+      }
+      body {
+        max-width: 720px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      h1 {
+        font-size: 1.25rem;
+      }
+      label {
+        display: block;
+        margin: 0.75rem 0 0.25rem;
+        font-weight: 600;
+      }
+      input,
+      textarea,
+      button {
+        font: inherit;
+      }
+      input[type="text"] {
+        width: 100%;
+        padding: 0.5rem;
+        box-sizing: border-box;
+      }
+      textarea {
+        width: 100%;
+        min-height: 120px;
+        padding: 0.5rem;
+        box-sizing: border-box;
+        font-family: ui-monospace, monospace;
+        font-size: 0.85rem;
+      }
+      button {
+        margin-top: 0.5rem;
+        margin-right: 0.5rem;
+        padding: 0.5rem 0.9rem;
+        cursor: pointer;
+      }
+      #log {
+        background: #111;
+        color: #d6ffd6;
+        padding: 0.75rem;
+        border-radius: 6px;
+        min-height: 160px;
+        white-space: pre-wrap;
+        font-family: ui-monospace, monospace;
+        font-size: 0.8rem;
+        overflow: auto;
+        max-height: 280px;
+      }
+      #captchaImg {
+        max-width: 100%;
+        border: 1px solid #99a;
+        margin: 0.5rem 0;
+        display: none;
+      }
+      .row {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .status {
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>DS-160 WebSocket plumbing test</h1>
+    <p>
+      Create a job via <code>POST /jobs</code>, paste the <code>jobId</code>,
+      connect, then answer CAPTCHA / corrections when prompted.
+    </p>
+
+    <label for="jobId">Job ID</label>
+    <div class="row">
+      <input id="jobId" type="text" placeholder="uuid from POST /jobs" />
+      <button id="connectBtn" type="button">Connect</button>
+      <button id="disconnectBtn" type="button" disabled>Disconnect</button>
+    </div>
+    <p>Status: <span class="status" id="status">disconnected</span></p>
+
+    <img id="captchaImg" alt="CAPTCHA" />
+    <label for="captchaAnswer">CAPTCHA answer</label>
+    <div class="row">
+      <input id="captchaAnswer" type="text" />
+      <button id="sendCaptcha" type="button">Send captcha-answer</button>
+    </div>
+
+    <label for="corrections">Corrections JSON</label>
+    <textarea
+      id="corrections"
+      placeholder='[{"target":"tbxAPP_SURNAME","value":"SMITH","kind":"text"}]'
+    ></textarea>
+    <button id="sendCorrections" type="button">Send correction-answer</button>
+
+    <label>Event log</label>
+    <div id="log"></div>
+
+    <script>
+      const logEl = document.getElementById("log");
+      const statusEl = document.getElementById("status");
+      const captchaImg = document.getElementById("captchaImg");
+      let ws = null;
+
+      function log(msg) {
+        logEl.textContent += msg + "\n";
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+
+      function setStatus(s) {
+        statusEl.textContent = s;
+      }
+
+      document.getElementById("connectBtn").onclick = () => {
+        const jobId = document.getElementById("jobId").value.trim();
+        if (!jobId) {
+          alert("Enter jobId");
+          return;
+        }
+        if (ws) ws.close();
+        const proto = location.protocol === "https:" ? "wss" : "ws";
+        const url = `${proto}://${location.host}/ws?jobId=${encodeURIComponent(jobId)}`;
+        ws = new WebSocket(url);
+        setStatus("connecting…");
+        document.getElementById("connectBtn").disabled = true;
+        document.getElementById("disconnectBtn").disabled = false;
+
+        ws.onopen = () => {
+          setStatus("connected");
+          log(`opened ${url}`);
+        };
+        ws.onclose = () => {
+          setStatus("disconnected");
+          log("closed");
+          document.getElementById("connectBtn").disabled = false;
+          document.getElementById("disconnectBtn").disabled = true;
+        };
+        ws.onerror = () => log("socket error");
+        ws.onmessage = (ev) => {
+          log(`← ${ev.data}`);
+          try {
+            const msg = JSON.parse(ev.data);
+            if (msg.type === "status") setStatus(msg.status);
+            if (msg.type === "captcha-needed" && msg.imageBase64) {
+              captchaImg.src = `data:image/png;base64,${msg.imageBase64}`;
+              captchaImg.style.display = "block";
+            }
+            if (msg.type === "completed") {
+              log(`PDF: ${msg.downloadUrl}`);
+            }
+            if (msg.type === "correction-needed") {
+              log("Errors: " + JSON.stringify(msg.errors, null, 2));
+            }
+          } catch {
+            /* ignore */
+          }
+        };
+      };
+
+      document.getElementById("disconnectBtn").onclick = () => {
+        if (ws) ws.close();
+      };
+
+      document.getElementById("sendCaptcha").onclick = () => {
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+          alert("Not connected");
+          return;
+        }
+        const answer = document.getElementById("captchaAnswer").value.trim();
+        const payload = JSON.stringify({ type: "captcha-answer", answer });
+        ws.send(payload);
+        log(`→ ${payload}`);
+      };
+
+      document.getElementById("sendCorrections").onclick = () => {
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+          alert("Not connected");
+          return;
+        }
+        let corrections;
+        try {
+          corrections = JSON.parse(
+            document.getElementById("corrections").value || "[]",
+          );
+        } catch (e) {
+          alert("Invalid JSON: " + e.message);
+          return;
+        }
+        const payload = JSON.stringify({
+          type: "correction-answer",
+          corrections,
+        });
+        ws.send(payload);
+        log(`→ ${payload}`);
+      };
+    </script>
+  </body>
+</html>
