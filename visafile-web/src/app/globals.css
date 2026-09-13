@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+:root {
+  --primary: #4058e8;
+  --primary-hover: #344bd4;
+  --primary-deep: #2435a5;
+  --ink: #182331;
+  --muted: #657184;
+  --cream: #fbf7ed;
+  --surface: #ffffff;
+  --surface-soft: #f2f4fa;
+  --sky: #dcecff;
+  --peach: #ffd9c8;
+  --mint: #d8f4e5;
+  --mint-strong: #178a62;
+  --yellow: #ffe58a;
+  --border: #d9dfe8;
+  --error: #b42318;
+  --error-soft: #fff1ef;
+  --warning: #8a5500;
+  --success: #087451;
+  --focus: rgb(64 88 232 / 18%);
+  --radius: 1.25rem;
+  --shadow-soft: 0 18px 50px rgb(24 35 49 / 8%);
+}
+
+* {
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+}
+body {
+  margin: 0;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif;
+}
+a {
+  text-decoration: none;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+}
+::selection {
+  background: var(--yellow);
+  color: var(--ink);
+}
+
+.display {
+  font-family: "Iowan Old Style", Baskerville, "Times New Roman", serif;
+}
+.page-shell {
+  width: min(1180px, calc(100% - 40px));
+  margin-inline: auto;
+}
+.eyebrow {
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+.dot-grid {
+  background-image: radial-gradient(rgb(24 35 49 / 17%) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+@media (max-width: 640px) {
+  .page-shell {
+    width: min(100% - 28px, 1180px);
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
