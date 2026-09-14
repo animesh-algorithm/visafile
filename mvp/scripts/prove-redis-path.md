@@ -36,8 +36,8 @@ npm run dev:frontend
 
 1. Job paused at `awaiting_captcha`.
 2. Worker process killed.
-3. On next `npm run dev:worker` start, orphan recovery fails stuck jobs with:
-   `Worker restarted while this job was in progress (orphaned). Re-submit the job.`
+3. On next `npm run dev:worker` start, leftover BullMQ + open DB jobs are cleared with:
+   `Cleared on worker start (earlier job discarded). Re-submit the job.`
 4. Graceful SIGTERM also marks the active job failed immediately.
 
 Jobs do **not** silently hang after a worker restart.

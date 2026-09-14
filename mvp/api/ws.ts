@@ -18,6 +18,15 @@ const EVENTS = [
 
 export async function registerWebSocket(app: FastifyInstance) {
   app.get("/ws", { websocket: true }, async (socket: WebSocket, request) => {
+    const expectedToken = process.env.AUTOMATION_API_TOKEN?.trim();
+    if (
+      expectedToken &&
+      request.headers.authorization !== `Bearer ${expectedToken}`
+    ) {
+      socket.send(JSON.stringify({ type: "failed", error: "Unauthorized" }));
+      socket.close();
+      return;
+    }
     const url = new URL(request.url, "http://localhost");
     const jobId = url.searchParams.get("jobId");
     if (!jobId) {

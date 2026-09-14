@@ -31,7 +31,7 @@ npm run dev:worker   # separate process — needed for restart test
 npm run dev:frontend
 ```
 
-Worker restart during `awaiting_captcha`: BullMQ lock is 15m; if the worker process dies, the job is marked **failed** with a clear error (not left hanging).
+On worker start, leftover BullMQ jobs are obliterated and any open DB jobs (`queued` / mid-flight) are marked **failed**, so restarts do not auto-resume earlier runs. Re-submit from the UI after starting the worker.
 
 ## Environment
 

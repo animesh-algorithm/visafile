@@ -9,9 +9,13 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "sync:ceac-options": "node scripts/sync-ceac-options.mjs",
+    "check:ceac-options": "node scripts/sync-ceac-options.mjs --check",
+    "test": "npm run check:ceac-options && node scripts/check-intake-parity.mjs && tsx scripts/check-automation-payload.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.116.0",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "lucide-react": "1.45.0",
@@ -30,6 +34,7 @@
     "eslint-config-next": "16.3.5",
     "prettier": "3.9.6",
     "tailwindcss": "4.3.3",
+    "tsx": "^4.23.13",
     "typescript": "6.0.2"
   }
 }

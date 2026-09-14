@@ -45,6 +45,35 @@ export async function enqueueJob(payload: Ds160JobPayload): Promise<void> {
   });
 }
 
+/**
+ * Remove every BullMQ job (waiting/active/delayed/…) and return their app jobIds.
+ * Used on worker start so leftover Redis jobs are not auto-resumed.
+ */
+export async function drainBullQueue(): Promise<string[]> {
+  if (isLocalStack()) return [];
+
+  const q = getBullQueue();
+  const jobs = await q.getJobs([
+    "waiting",
+    "delayed",
+    "active",
+    "paused",
+    "prioritized",
+    "wait",
+  ]);
+  const jobIds = [
+    ...new Set(
+      jobs
+        .map((j) => j.data?.jobId)
+        .filter((id): id is string => typeof id === "string" && id.length > 0),
+    ),
+  ];
+  await q.obliterate({ force: true });
+  await q.close();
+  queue = null;
+  return jobIds;
+}
+
 /** @deprecated use enqueueJob — kept for any leftover imports */
 export function getQueue() {
   return {

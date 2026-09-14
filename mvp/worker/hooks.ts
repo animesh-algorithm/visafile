@@ -33,7 +33,12 @@ export function createJobHooks(jobId: string): Ds160JobHooks {
     },
 
     async onCaptchaNeeded(imageBuffer: Buffer): Promise<string> {
-      await updateJobStatus(jobId, "awaiting_captcha");
+      await updateJobStatus(jobId, "awaiting_captcha", {
+        pending_interaction: {
+          type: "captcha",
+          imageBase64: imageBuffer.toString("base64"),
+        },
+      });
       await publishJobMessage(jobId, {
         type: "captcha-needed",
         imageBase64: imageBuffer.toString("base64"),
@@ -43,7 +48,7 @@ export function createJobHooks(jobId: string): Ds160JobHooks {
       if (reply.type !== "captcha-answer" || !reply.answer?.trim()) {
         throw new Error("Invalid captcha-answer message");
       }
-      await updateJobStatus(jobId, "filling");
+      await updateJobStatus(jobId, "filling", { pending_interaction: null });
       await publishStatus(jobId, "filling");
       return reply.answer.trim();
     },
@@ -52,7 +57,9 @@ export function createJobHooks(jobId: string): Ds160JobHooks {
       errors: ValidationErrorItem[],
     ): Promise<FieldCorrection[]> {
       const enriched = enrichErrors(errors);
-      await updateJobStatus(jobId, "awaiting_correction");
+      await updateJobStatus(jobId, "awaiting_correction", {
+        pending_interaction: { type: "correction", errors: enriched },
+      });
       await publishJobMessage(jobId, {
         type: "correction-needed",
         errors: enriched,
@@ -62,7 +69,7 @@ export function createJobHooks(jobId: string): Ds160JobHooks {
       if (reply.type !== "correction-answer") {
         throw new Error("Invalid correction-answer message");
       }
-      await updateJobStatus(jobId, "filling");
+      await updateJobStatus(jobId, "filling", { pending_interaction: null });
       await publishStatus(jobId, "filling");
       return reply.corrections ?? [];
     },

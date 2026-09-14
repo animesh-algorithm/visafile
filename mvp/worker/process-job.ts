@@ -45,6 +45,7 @@ export async function processDs160Job(data: Ds160JobPayload) {
     await updateJobStatus(jobId, "completed", {
       pdf_path: pdfUri,
       error: null,
+      pending_interaction: null,
     });
 
     const downloadUrl = `/jobs/${jobId}/pdf`;
@@ -59,7 +60,10 @@ export async function processDs160Job(data: Ds160JobPayload) {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`[worker] job ${jobId} failed:`, message);
-    await updateJobStatus(jobId, "failed", { error: message });
+    await updateJobStatus(jobId, "failed", {
+      error: message,
+      pending_interaction: null,
+    });
     await publishJobMessage(jobId, { type: "failed", error: message });
     throw error;
   } finally {

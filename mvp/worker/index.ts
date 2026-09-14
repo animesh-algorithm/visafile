@@ -6,27 +6,40 @@ import { publishJobMessage } from "../shared/pubsub.js";
 import { updateJobStatus } from "../api/db/client.js";
 import { listStuckJobIds } from "../api/db/orphans.js";
 import { processDs160Job } from "./process-job.js";
-import { redisConnection, type Ds160JobPayload } from "./queue.js";
+import {
+  drainBullQueue,
+  redisConnection,
+  type Ds160JobPayload,
+} from "./queue.js";
 import { startLocalWorker } from "./local-queue.js";
 import { getActiveJobId } from "./active-job.js";
 
 async function markFailed(jobId: string, error: string) {
-  await updateJobStatus(jobId, "failed", { error });
+  await updateJobStatus(jobId, "failed", {
+    error,
+    pending_interaction: null,
+  });
   await publishJobMessage(jobId, { type: "failed", error });
 }
 
 /**
- * When a worker process dies mid-job, Postgres can be left at
- * awaiting_captcha/filling. On next start, fail those orphans so the UI
- * doesn't hang forever.
+ * Drop leftover BullMQ work and mark open DB jobs failed so a restart
+ * starts clean (no auto-resume of earlier CAPTCHA/fill runs).
  */
-async function failOrphanedJobs() {
-  const ids = await listStuckJobIds();
+async function clearEarlierJobs() {
+  const fromQueue = await drainBullQueue();
+  const fromDb = await listStuckJobIds();
+  const ids = [...new Set([...fromQueue, ...fromDb])];
+  const msg =
+    "Cleared on worker start (earlier job discarded). Re-submit the job.";
   for (const id of ids) {
-    const msg =
-      "Worker restarted while this job was in progress (orphaned). Re-submit the job.";
-    console.log(`[worker] failing orphaned job ${id}`);
+    console.log(`[worker] clearing earlier job ${id}`);
     await markFailed(id, msg);
+  }
+  if (ids.length === 0) {
+    console.log("[worker] no earlier jobs to clear");
+  } else {
+    console.log(`[worker] cleared ${ids.length} earlier job(s)`);
   }
 }
 
@@ -41,7 +54,7 @@ async function main() {
     return;
   }
 
-  await failOrphanedJobs();
+  await clearEarlierJobs();
 
   // Short lock: while alive BullMQ renews it. Hard-kill → stall within ~1–2 min.
   const worker = new Worker<Ds160JobPayload>(

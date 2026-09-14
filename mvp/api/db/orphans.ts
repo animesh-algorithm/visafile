@@ -4,6 +4,7 @@ import { getSqlite } from "./sqlite.js";
 import type { JobStatus } from "../../shared/types.js";
 
 const STUCK: JobStatus[] = [
+  "queued",
   "filling",
   "awaiting_captcha",
   "awaiting_correction",
@@ -11,7 +12,8 @@ const STUCK: JobStatus[] = [
 ];
 
 /**
- * Jobs left mid-flight when a worker process dies without a clean shutdown.
+ * Jobs still open in the DB (queued or mid-flight). Cleared on worker start
+ * so leftover Redis/BullMQ work is not resumed after a restart.
  */
 export async function listStuckJobIds(): Promise<string[]> {
   if (isLocalStack()) {

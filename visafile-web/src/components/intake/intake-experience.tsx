@@ -2,45 +2,53 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Dialog, RadioGroup } from "radix-ui";
 import {
   ArrowLeft,
   ArrowRight,
   Check,
-  CheckCircle2,
   CircleHelp,
   Clock3,
   FileCheck2,
   Home,
   Info,
-  LockKeyhole,
   Menu,
-  Pencil,
-  RotateCcw,
   Save,
-  ShieldCheck,
+  Send,
   X,
 } from "lucide-react";
+import type { User } from "@supabase/supabase-js";
 import { Brand } from "@/components/brand";
+import { IntakeField } from "@/components/intake/intake-field";
+import { IntakeReview } from "@/components/intake/intake-review";
+import {
+  ClearDraftDialog,
+  LoadingState,
+  SuccessState,
+} from "@/components/intake/intake-shell-states";
+import { SupabaseAuthPanel } from "@/components/intake/supabase-auth-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { Select } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
+import { hasValue } from "@/lib/intake-answer";
 import {
   allFields,
   isFieldVisible,
-  labelForAnswer,
   stages,
   type Answer,
   type Answers,
-  type FieldDefinition,
 } from "@/lib/intake-definition";
+import {
+  clearIntakeDraft,
+  loadIntakeDraft,
+  saveIntakeDraft,
+} from "@/lib/intake-draft";
+import { createLocalhostPrefillAnswers } from "@/lib/local-prefill";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
-const STORAGE_KEY = "visafile-intake-draft-v1";
 type SaveState = "idle" | "saving" | "saved" | "error";
+type SubmissionState = "idle" | "submitting" | "submitted" | "error";
 
 export function IntakeExperience() {
   const [answers, setAnswers] = React.useState<Answers>({});
@@ -50,23 +58,32 @@ export function IntakeExperience() {
   const [saveState, setSaveState] = React.useState<SaveState>("idle");
   const [completed, setCompleted] = React.useState(false);
   const [mobileNav, setMobileNav] = React.useState(false);
+  const [canPrefill, setCanPrefill] = React.useState(false);
+  const [prefillEnabled, setPrefillEnabled] = React.useState(false);
+  const [user, setUser] = React.useState<User | null>(null);
+  const [authMessage, setAuthMessage] = React.useState<string | null>(null);
+  const [submissionState, setSubmissionState] =
+    React.useState<SubmissionState>("idle");
+  const [submissionMessage, setSubmissionMessage] = React.useState<
+    string | null
+  >(null);
+  const [submissionId, setSubmissionId] = React.useState<string | null>(null);
+  const [authorizeOfficialSubmission, setAuthorizeOfficialSubmission] =
+    React.useState(false);
   const firstFieldRef = React.useRef<HTMLHeadingElement>(null);
 
   React.useEffect(() => {
     const timeout = window.setTimeout(() => {
       try {
-        const stored = window.localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored) as {
-            answers?: Answers;
-            step?: number;
-          };
-          setAnswers(parsed.answers ?? {});
-          setStep(Math.min(parsed.step ?? 0, stages.length - 1));
+        const draft = loadIntakeDraft();
+        if (draft) {
+          setAnswers(draft.answers);
+          setStep(Math.min(draft.step, stages.length - 1));
         }
       } catch {
         setSaveState("error");
       }
+      setCanPrefill(window.location.hostname === "localhost");
       setHydrated(true);
     }, 0);
     return () => window.clearTimeout(timeout);
@@ -76,15 +93,7 @@ export function IntakeExperience() {
     if (!hydrated) return;
     const timeout = window.setTimeout(() => {
       try {
-        window.localStorage.setItem(
-          STORAGE_KEY,
-          JSON.stringify({
-            version: 1,
-            answers,
-            step,
-            updatedAt: new Date().toISOString(),
-          }),
-        );
+        saveIntakeDraft(answers, step);
         setSaveState("saved");
       } catch {
         setSaveState("error");
@@ -92,6 +101,26 @@ export function IntakeExperience() {
     }, 450);
     return () => window.clearTimeout(timeout);
   }, [answers, step, hydrated]);
+
+  React.useEffect(() => {
+    if (!supabase) return;
+    let mounted = true;
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (mounted) setUser(data.session?.user ?? null);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const currentStage = stages[step];
   const visibleFields = currentStage.groups
@@ -160,6 +189,37 @@ export function IntakeExperience() {
     return true;
   }
 
+  function validateAllRequiredAnswers() {
+    const nextErrors: Record<string, string> = {};
+    const firstMissingStage = stages.findIndex((stage) => {
+      const missingField = stage.groups
+        .flatMap((group) => group.fields)
+        .filter((field) => isFieldVisible(field, answers))
+        .find((field) => field.required && !hasValue(answers[field.id]));
+
+      if (missingField) {
+        nextErrors[missingField.id] =
+          "Please answer this question before submitting.";
+      }
+      return Boolean(missingField);
+    });
+
+    setErrors(nextErrors);
+    if (firstMissingStage >= 0) {
+      setStep(firstMissingStage);
+      setMobileNav(false);
+      window.setTimeout(
+        () =>
+          document
+            .querySelector<HTMLElement>("[data-field-error='true']")
+            ?.focus(),
+        0,
+      );
+      return false;
+    }
+    return true;
+  }
+
   function goTo(next: number, validate = false) {
     if (validate && !validateCurrent()) return;
     setErrors({});
@@ -171,12 +231,88 @@ export function IntakeExperience() {
   }
 
   function clearDraft() {
-    window.localStorage.removeItem(STORAGE_KEY);
+    clearIntakeDraft();
     setAnswers({});
     setStep(0);
     setErrors({});
     setCompleted(false);
+    setPrefillEnabled(false);
     setSaveState("idle");
+    setSubmissionState("idle");
+    setSubmissionMessage(null);
+    setSubmissionId(null);
+    setAuthorizeOfficialSubmission(false);
+  }
+
+  function toggleLocalPrefill(checked: boolean) {
+    setPrefillEnabled(checked);
+    setCompleted(false);
+    setErrors({});
+    setSaveState("saving");
+    if (checked) {
+      setAnswers(createLocalhostPrefillAnswers());
+      setStep(0);
+      return;
+    }
+    setAnswers({});
+    setStep(0);
+  }
+
+  async function submitIntake() {
+    setSubmissionMessage(null);
+    if (!supabase || !isSupabaseConfigured) {
+      setSubmissionState("error");
+      setSubmissionMessage(
+        "We can’t submit your intake right now. Please try again later.",
+      );
+      return;
+    }
+    if (!user) {
+      setSubmissionState("error");
+      setSubmissionMessage("Sign in before submitting this intake.");
+      return;
+    }
+    if (!validateAllRequiredAnswers()) return;
+
+    setSubmissionState("submitting");
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+    if (!token) {
+      setSubmissionState("error");
+      setSubmissionMessage(
+        "Your session expired. Sign in again before submitting.",
+      );
+      return;
+    }
+    try {
+      const response = await fetch("/api/applications", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ answers, authorizeOfficialSubmission }),
+      });
+      const result = (await response.json()) as {
+        applicationId?: string;
+        error?: string;
+      };
+      if (!response.ok || !result.applicationId) {
+        throw new Error(
+          result.error || "Something went wrong. Please try again.",
+        );
+      }
+      setSubmissionId(result.applicationId);
+      setSubmissionState("submitted");
+      setCompleted(true);
+    } catch (error) {
+      setSubmissionState("error");
+      setSubmissionMessage(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Please try again.",
+      );
+    }
   }
 
   if (!hydrated) return <LoadingState />;
@@ -185,6 +321,8 @@ export function IntakeExperience() {
       <SuccessState
         onReview={() => setCompleted(false)}
         onRestart={clearDraft}
+        submissionId={submissionId}
+        authorizeOfficialSubmission={authorizeOfficialSubmission}
       />
     );
 
@@ -211,7 +349,7 @@ export function IntakeExperience() {
                 Saved on this device
               </>
             )}
-            <Tooltip content="Your answers are saved on this device while you work. Nothing is sent while you are only filling out the draft.">
+            <Tooltip content="Your answers are saved on this device while you work. Sign in before sending them for review.">
               <button
                 className="grid size-9 place-items-center rounded-full hover:bg-[var(--surface-soft)]"
                 aria-label="About saving your answers"
@@ -296,6 +434,18 @@ export function IntakeExperience() {
             })}
           </ol>
           <div className="mt-7 border-t border-[var(--border)] pt-5">
+            <SupabaseAuthPanel
+              supabase={supabase}
+              user={user}
+              onMessage={setAuthMessage}
+            />
+            {authMessage && (
+              <p className="mt-3 rounded-xl bg-[var(--surface-soft)] px-3 py-2 text-xs font-bold text-[var(--muted)]">
+                {authMessage}
+              </p>
+            )}
+          </div>
+          <div className="mt-5 border-t border-[var(--border)] pt-5">
             <ClearDraftDialog onClear={clearDraft} />
             <Link
               href="/"
@@ -343,6 +493,28 @@ export function IntakeExperience() {
               <p className="mt-4 max-w-2xl leading-7 text-[var(--muted)]">
                 {currentStage.description}
               </p>
+              {canPrefill && (
+                <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-2xl border border-[var(--border)] bg-white p-4 text-sm shadow-[var(--shadow-soft)]">
+                  <Input
+                    type="checkbox"
+                    checked={prefillEnabled}
+                    onChange={(event) =>
+                      toggleLocalPrefill(event.target.checked)
+                    }
+                    className="mt-0.5 size-5 shrink-0 rounded-md p-0 accent-[var(--primary)]"
+                  />
+                  <span>
+                    <span className="block font-extrabold">
+                      Fill with sample answers
+                    </span>
+                    <span className="mt-1 block leading-5 text-[var(--muted)]">
+                      This fills your draft with example answers so you can try
+                      the intake without typing everything yourself. It does not
+                      submit anything.
+                    </span>
+                  </span>
+                </label>
+              )}
               <div className="mt-6 flex items-center gap-3">
                 <Progress
                   value={sectionProgress}
@@ -356,7 +528,32 @@ export function IntakeExperience() {
             </div>
 
             {currentStage.id === "review" ? (
-              <Review answers={answers} onEdit={goTo} />
+              <>
+                <IntakeReview
+                  answers={answers}
+                  onEdit={goTo}
+                  canSubmit={Boolean(supabase && user)}
+                />
+                <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-2xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-soft)]">
+                  <Input
+                    type="checkbox"
+                    checked={authorizeOfficialSubmission}
+                    onChange={(event) =>
+                      setAuthorizeOfficialSubmission(event.target.checked)
+                    }
+                    className="mt-0.5 size-5 shrink-0 rounded-md p-0 accent-[var(--primary)]"
+                  />
+                  <span className="text-sm">
+                    <span className="block font-extrabold">
+                      Authorize final CEAC submission after review and CAPTCHA
+                    </span>
+                    <span className="mt-1 block leading-5 text-[var(--muted)]">
+                      Leave this unchecked to have VisaFile prepare the form and
+                      stop before the irreversible government submission step.
+                    </span>
+                  </span>
+                </label>
+              </>
             ) : (
               <form
                 noValidate
@@ -385,7 +582,7 @@ export function IntakeExperience() {
                       {group.fields
                         .filter((field) => isFieldVisible(field, answers))
                         .map((field) => (
-                          <Field
+                          <IntakeField
                             key={field.id}
                             field={field}
                             value={answers[field.id]}
@@ -420,6 +617,20 @@ export function IntakeExperience() {
               </div>
             )}
 
+            {submissionMessage && (
+              <div
+                role="alert"
+                className={cn(
+                  "mt-6 rounded-2xl p-4 text-sm font-bold",
+                  submissionState === "error"
+                    ? "bg-[var(--error-soft)] text-[var(--error)]"
+                    : "bg-[var(--mint)] text-[var(--success)]",
+                )}
+              >
+                {submissionMessage}
+              </div>
+            )}
+
             <div className="mt-8 flex items-center justify-between border-t border-[var(--border)] pt-6">
               <Button
                 type="button"
@@ -434,9 +645,15 @@ export function IntakeExperience() {
                 <Button
                   type="button"
                   size="lg"
-                  onClick={() => setCompleted(true)}
+                  onClick={submitIntake}
+                  disabled={submissionState === "submitting"}
                 >
-                  Finish review <Check className="size-5" />
+                  {submissionState === "submitting"
+                    ? "Starting automation..."
+                    : authorizeOfficialSubmission
+                      ? "Start and submit"
+                      : "Prepare DS-160"}
+                  <Send className="size-5" />
                 </Button>
               ) : (
                 <Button
@@ -453,350 +670,4 @@ export function IntakeExperience() {
       </div>
     </div>
   );
-}
-
-function Field({
-  field,
-  value,
-  error,
-  onChange,
-}: {
-  field: FieldDefinition;
-  value?: Answer;
-  error?: string;
-  onChange: (value: Answer) => void;
-}) {
-  const errorId = `${field.id.replaceAll(".", "-")}-error`;
-  const helpId = `${field.id.replaceAll(".", "-")}-help`;
-  const describedBy =
-    [field.helper ? helpId : "", error ? errorId : ""]
-      .filter(Boolean)
-      .join(" ") || undefined;
-  const invalidProps = {
-    "aria-invalid": Boolean(error),
-    "aria-describedby": describedBy,
-    "data-field-error": error ? "true" : undefined,
-  } as const;
-  return (
-    <div
-      className={cn(
-        field.width === "full" ||
-          field.kind === "yesno" ||
-          field.kind === "checkbox"
-          ? "sm:col-span-2"
-          : "",
-        error && "rounded-2xl bg-[var(--error-soft)] p-3 -m-3",
-      )}
-    >
-      {field.kind === "yesno" ? (
-        <fieldset>
-          <legend className="flex items-start gap-2 text-sm font-extrabold leading-5">
-            {field.label}
-            <Required required={field.required} />
-            {field.sensitive && (
-              <LockKeyhole
-                className="mt-0.5 size-3.5 text-[var(--muted)]"
-                aria-label="Sensitive answer"
-              />
-            )}
-          </legend>
-          {field.helper && (
-            <p
-              id={helpId}
-              className="mt-2 text-sm leading-5 text-[var(--muted)]"
-            >
-              {field.helper}
-            </p>
-          )}
-          <RadioGroup.Root
-            value={typeof value === "string" ? value : ""}
-            onValueChange={onChange}
-            className="mt-3 grid grid-cols-2 gap-3"
-            {...invalidProps}
-          >
-            {["YES", "NO"].map((option) => (
-              <label
-                key={option}
-                className={cn(
-                  "flex min-h-13 cursor-pointer items-center gap-3 rounded-2xl border bg-white px-4 font-bold transition hover:border-[var(--primary)]",
-                  value === option
-                    ? "border-[var(--primary)] ring-2 ring-[var(--focus)]"
-                    : "border-[var(--border)]",
-                )}
-              >
-                <RadioGroup.Item
-                  value={option}
-                  className="grid size-5 place-items-center rounded-full border-2 border-[var(--border)] data-[state=checked]:border-[var(--primary)]"
-                >
-                  <RadioGroup.Indicator className="size-2.5 rounded-full bg-[var(--primary)]" />
-                </RadioGroup.Item>
-                {option === "YES" ? "Yes" : "No"}
-              </label>
-            ))}
-          </RadioGroup.Root>
-        </fieldset>
-      ) : (
-        <>
-          <label
-            htmlFor={field.id}
-            className="flex items-center gap-2 text-sm font-extrabold"
-          >
-            {field.label}
-            <Required required={field.required} />
-            {field.sensitive && (
-              <LockKeyhole
-                className="size-3.5 text-[var(--muted)]"
-                aria-label="Sensitive answer"
-              />
-            )}
-          </label>
-          {field.helper && (
-            <p
-              id={helpId}
-              className="mt-1.5 text-sm leading-5 text-[var(--muted)]"
-            >
-              {field.helper}
-            </p>
-          )}
-          <div className="mt-2">
-            {field.kind === "select" ? (
-              <Select
-                id={field.id}
-                value={typeof value === "string" ? value : ""}
-                onChange={(event) => onChange(event.target.value)}
-                {...invalidProps}
-              >
-                <option value="">Choose an answer</option>
-                {field.options?.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </Select>
-            ) : field.kind === "textarea" || field.kind === "list" ? (
-              <Textarea
-                id={field.id}
-                value={typeof value === "string" ? value : ""}
-                placeholder={field.placeholder}
-                onChange={(event) => onChange(event.target.value)}
-                {...invalidProps}
-              />
-            ) : (
-              <Input
-                id={field.id}
-                type={field.kind === "date" ? "date" : field.kind}
-                value={typeof value === "string" ? value : ""}
-                placeholder={field.placeholder}
-                onChange={(event) => onChange(event.target.value)}
-                autoComplete="off"
-                {...invalidProps}
-              />
-            )}
-          </div>
-        </>
-      )}
-      {error && (
-        <p id={errorId} className="mt-2 text-sm font-bold text-[var(--error)]">
-          {error}
-        </p>
-      )}
-    </div>
-  );
-}
-
-function Required({ required }: { required?: boolean }) {
-  return required ? (
-    <span className="text-[var(--error)]" aria-label="required">
-      *
-    </span>
-  ) : (
-    <span className="text-xs font-medium text-[var(--muted)]">Optional</span>
-  );
-}
-
-function Review({
-  answers,
-  onEdit,
-}: {
-  answers: Answers;
-  onEdit: (step: number) => void;
-}) {
-  return (
-    <div className="space-y-5">
-      <div className="flex gap-3 rounded-2xl bg-[var(--mint)] p-4 text-sm text-[var(--success)]">
-        <ShieldCheck className="size-5 shrink-0" />
-        <p>
-          <strong>Nothing will be submitted.</strong> This screen only checks
-          the answers saved on this device.
-        </p>
-      </div>
-      {stages.slice(0, -1).map((stage, stageIndex) => {
-        const fields = stage.groups
-          .flatMap((group) => group.fields)
-          .filter((field) => isFieldVisible(field, answers));
-        const missing = fields.filter(
-          (field) => field.required && !hasValue(answers[field.id]),
-        ).length;
-        return (
-          <section
-            key={stage.id}
-            className="overflow-hidden rounded-[1.5rem] bg-white shadow-[var(--shadow-soft)]"
-          >
-            <div className="flex items-center justify-between gap-4 border-b border-[var(--border)] px-5 py-4 sm:px-7">
-              <div>
-                <h2 className="font-extrabold">{stage.shortTitle}</h2>
-                <p
-                  className={cn(
-                    "mt-1 text-xs font-bold",
-                    missing ? "text-[var(--warning)]" : "text-[var(--success)]",
-                  )}
-                >
-                  {missing
-                    ? `${missing} required ${missing === 1 ? "answer" : "answers"} missing`
-                    : "Ready to review"}
-                </p>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onEdit(stageIndex)}
-              >
-                <Pencil className="size-4" />
-                Edit
-              </Button>
-            </div>
-            <dl className="grid gap-x-8 px-5 py-4 sm:grid-cols-2 sm:px-7">
-              {fields
-                .filter((field) => hasValue(answers[field.id]))
-                .slice(0, 8)
-                .map((field) => (
-                  <div
-                    key={field.id}
-                    className="border-b border-[var(--border)] py-3 last:border-0"
-                  >
-                    <dt className="text-xs font-bold text-[var(--muted)]">
-                      {field.label}
-                    </dt>
-                    <dd className="mt-1 break-words text-sm font-bold">
-                      {labelForAnswer(field, answers[field.id])}
-                    </dd>
-                  </div>
-                ))}
-              {fields.every((field) => !hasValue(answers[field.id])) && (
-                <p className="py-3 text-sm text-[var(--muted)]">
-                  No answers yet.
-                </p>
-              )}
-            </dl>
-          </section>
-        );
-      })}
-    </div>
-  );
-}
-
-function ClearDraftDialog({ onClear }: { onClear: () => void }) {
-  return (
-    <Dialog.Root>
-      <Dialog.Trigger asChild>
-        <button className="flex w-full items-center gap-2 rounded-xl px-3 py-3 text-sm font-bold text-[var(--muted)] hover:bg-[var(--error-soft)] hover:text-[var(--error)]">
-          <RotateCcw className="size-4" />
-          Start over
-        </button>
-      </Dialog.Trigger>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-[var(--ink)]/45 backdrop-blur-sm" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[min(92vw,440px)] -translate-x-1/2 -translate-y-1/2 rounded-[1.5rem] bg-white p-6 shadow-2xl">
-          <Dialog.Title className="display text-3xl">
-            Clear your draft?
-          </Dialog.Title>
-          <Dialog.Description className="mt-3 leading-6 text-[var(--muted)]">
-            This removes every answer saved by VisaFile in this browser. This
-            cannot be undone.
-          </Dialog.Description>
-          <div className="mt-7 flex justify-end gap-3">
-            <Dialog.Close asChild>
-              <Button variant="secondary">Keep draft</Button>
-            </Dialog.Close>
-            <Dialog.Close asChild>
-              <Button
-                onClick={onClear}
-                className="bg-[var(--error)] shadow-none hover:bg-[var(--error)]"
-              >
-                Clear draft
-              </Button>
-            </Dialog.Close>
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
-  );
-}
-
-function LoadingState() {
-  return (
-    <div className="min-h-screen bg-[var(--surface-soft)]">
-      <div className="h-18 border-b border-[var(--border)] bg-white" />
-      <div className="mx-auto max-w-3xl animate-pulse px-5 py-16">
-        <div className="h-3 w-28 rounded bg-[var(--border)]" />
-        <div className="mt-5 h-12 w-3/4 rounded-xl bg-[var(--border)]" />
-        <div className="mt-8 h-80 rounded-[1.5rem] bg-white" />
-      </div>
-      <span className="sr-only">Loading your saved draft</span>
-    </div>
-  );
-}
-
-function SuccessState({
-  onReview,
-  onRestart,
-}: {
-  onReview: () => void;
-  onRestart: () => void;
-}) {
-  return (
-    <main className="grid min-h-screen place-items-center bg-[var(--primary)] px-5 py-12 text-white">
-      <div className="w-full max-w-2xl text-center">
-        <span className="mx-auto grid size-20 place-items-center rounded-full bg-[var(--yellow)] text-[var(--ink)]">
-          <CheckCircle2 className="size-10" />
-        </span>
-        <p className="eyebrow mt-7 text-[var(--yellow)]">
-          Intake review complete
-        </p>
-        <h1 className="display mt-3 text-5xl leading-tight tracking-[-.04em] sm:text-6xl">
-          Your answers are ready for review.
-        </h1>
-        <p className="mx-auto mt-5 max-w-xl text-lg leading-8 text-white/75">
-          No DS-160 was submitted. VisaFile pauses before any official filing
-          step so you can review what happens next.
-        </p>
-        <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
-          <Button variant="light" size="lg" onClick={onReview}>
-            Review answers
-          </Button>
-          <Button
-            variant="secondary"
-            size="lg"
-            onClick={onRestart}
-            className="border-white/30 bg-transparent text-white ring-white/30 hover:bg-white/10"
-          >
-            Start a new draft
-          </Button>
-        </div>
-        <Link
-          href="/"
-          className="mt-8 inline-flex items-center gap-2 text-sm font-bold text-white/70 hover:text-white"
-        >
-          <ArrowLeft className="size-4" />
-          Back to VisaFile home
-        </Link>
-      </div>
-    </main>
-  );
-}
-
-function hasValue(value: Answer | undefined) {
-  return Array.isArray(value)
-    ? value.length > 0
-    : value !== undefined && value !== "" && value !== false;
 }

@@ -1,6 +1,10 @@
 import pg from "pg";
 import type { Ds160Application } from "../../shared/schema/ds160-application.js";
-import type { JobRecord, JobStatus } from "../../shared/types.js";
+import type {
+  JobRecord,
+  JobStatus,
+  PendingInteraction,
+} from "../../shared/types.js";
 import { isLocalStack } from "../../shared/config.js";
 import {
   sqliteGetJob,
@@ -33,7 +37,7 @@ export async function insertJob(
   const { rows } = await getPool().query<JobRecord>(
     `INSERT INTO jobs (id, status, payload)
      VALUES ($1, 'queued', $2::jsonb)
-     RETURNING id, status, payload, pdf_path, error,
+     RETURNING id, status, payload, pdf_path, error, pending_interaction,
                created_at::text, updated_at::text`,
     [id, JSON.stringify(payload)],
   );
@@ -45,7 +49,7 @@ export async function getJob(id: string): Promise<JobRecord | null> {
     return sqliteGetJob(id);
   }
   const { rows } = await getPool().query<JobRecord>(
-    `SELECT id, status, payload, pdf_path, error,
+    `SELECT id, status, payload, pdf_path, error, pending_interaction,
             created_at::text, updated_at::text
      FROM jobs WHERE id = $1`,
     [id],
@@ -56,7 +60,11 @@ export async function getJob(id: string): Promise<JobRecord | null> {
 export async function updateJobStatus(
   id: string,
   status: JobStatus,
-  extra?: { pdf_path?: string | null; error?: string | null },
+  extra?: {
+    pdf_path?: string | null;
+    error?: string | null;
+    pending_interaction?: PendingInteraction | null;
+  },
 ): Promise<JobRecord | null> {
   if (isLocalStack()) {
     return sqliteUpdateJobStatus(id, status, extra);
@@ -66,9 +74,11 @@ export async function updateJobStatus(
      SET status = $2,
          pdf_path = CASE WHEN $3::boolean THEN $4 ELSE pdf_path END,
          error = CASE WHEN $5::boolean THEN $6 ELSE error END,
+         pending_interaction = CASE WHEN $7::boolean THEN $8::jsonb
+                                    ELSE pending_interaction END,
          updated_at = NOW()
      WHERE id = $1
-     RETURNING id, status, payload, pdf_path, error,
+     RETURNING id, status, payload, pdf_path, error, pending_interaction,
                created_at::text, updated_at::text`,
     [
       id,
@@ -77,6 +87,10 @@ export async function updateJobStatus(
       extra?.pdf_path ?? null,
       extra !== undefined && "error" in extra,
       extra?.error ?? null,
+      extra !== undefined && "pending_interaction" in extra,
+      extra?.pending_interaction
+        ? JSON.stringify(extra.pending_interaction)
+        : null,
     ],
   );
   return rows[0] ?? null;

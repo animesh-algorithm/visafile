@@ -73,6 +73,7 @@ const locationCode = () =>
   jobContext.locationCode || process.env.DS160_LOCATION || "HYD";
 // Headless by default. Set HEADLESS=false to watch the browser.
 const headless = process.env.HEADLESS !== "false";
+const chromeChannel = process.env.PUPPETEER_CHANNEL?.trim() || "chrome";
 const securityAnswer = () =>
   jobContext.securityAnswer ||
   process.env.DS160_SECURITY_ANSWER?.trim() ||
@@ -157,6 +158,58 @@ async function sleep(ms, reason = "wait") {
     log(`… sleeping ${ms}ms — ${reason}`);
   }
   await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function launchBrowser() {
+  const options = {
+    headless,
+    defaultViewport: headless ? { width: 1280, height: 900 } : null,
+    args: headless ? ["--disable-dev-shm-usage"] : ["--start-maximized"],
+  };
+  try {
+    return await puppeteer.launch({ ...options, channel: chromeChannel });
+  } catch (error) {
+    log(
+      `Could not launch Chrome channel="${chromeChannel}": ${error.message}. Falling back to bundled Chrome.`,
+    );
+    return await puppeteer.launch(options);
+  }
+}
+
+async function describePage(page) {
+  const title = await page.title();
+  return {
+    title,
+    url: page.url(),
+    cloudflare: /cloudflare|attention required|just a moment/i.test(title),
+  };
+}
+
+function locationPageUnavailableError({ title, url, cloudflare }) {
+  if (cloudflare) {
+    return new Error(
+      headless
+        ? `CEAC showed a Cloudflare check (title="${title}") instead of the location page, so VisaFile cannot prompt for the official CAPTCHA yet. Headless Chrome is blocked on this network. Set HEADLESS=false, complete the browser check in the Chrome window, then enter the CEAC CAPTCHA in VisaFile.`
+        : `CEAC is still on a Cloudflare check (title="${title}" at ${url}). Complete the check in the open Chrome window, then VisaFile will prompt for the official CAPTCHA.`,
+    );
+  }
+
+  return new Error(
+    `Waiting for selector \`${LOCATION_SELECTOR}\` failed on ${url} (title="${title}").`,
+  );
+}
+
+async function waitForLocationDropdown(page) {
+  const immediate = await describePage(page);
+  if (immediate.cloudflare && /attention required/i.test(immediate.title)) {
+    throw locationPageUnavailableError(immediate);
+  }
+
+  try {
+    await page.waitForSelector(LOCATION_SELECTOR, { timeout: 90_000 });
+  } catch {
+    throw locationPageUnavailableError(await describePage(page));
+  }
 }
 
 async function isAspNetAsyncPostBack(page) {
@@ -3369,11 +3422,7 @@ export async function runDs160Job(jobData, hooks = {}) {
     await jobContext.hooks.onStatus("filling");
   }
 
-  const browser = await puppeteer.launch({
-    headless,
-    defaultViewport: headless ? { width: 1280, height: 900 } : null,
-    args: headless ? ["--disable-dev-shm-usage"] : ["--start-maximized"],
-  });
+  const browser = await launchBrowser();
 
   await browser
     .defaultBrowserContext()
@@ -3406,7 +3455,9 @@ export async function runDs160Job(jobData, hooks = {}) {
       }),
     );
 
-    await page.waitForSelector(LOCATION_SELECTOR);
+    await timed("wait for location dropdown", () =>
+      waitForLocationDropdown(page),
+    );
 
     const selectedLocation = await page.$eval(
       LOCATION_SELECTOR,

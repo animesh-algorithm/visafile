@@ -1,171 +1,44 @@
-export type Answer = string | boolean | string[];
-export type Answers = Record<string, Answer>;
+import {
+  COUNTRIES_ADDRESS,
+  COUNTRIES_BIRTH,
+  COUNTRIES_NATIONALITY,
+  COUNTRIES_PASSPORT_ISSUED,
+  COUNTRIES_PASSPORT_ISSUED_IN,
+  INTERVIEW_LOCATIONS,
+  LENGTH_OF_STAY_UNIT,
+  MARITAL_STATUS,
+  OCCUPATION,
+  OTHER_PURPOSE,
+  PASSPORT_TYPE,
+  PAYING_FOR_TRIP,
+  PURPOSE_OF_TRIP,
+  SEX,
+  US_CONTACT_RELATIONSHIP,
+  US_STATES,
+} from "@/lib/ceac-options";
+import {
+  booleanYesNo,
+  date,
+  explainIfYes,
+  optionalText,
+  select,
+  text,
+  yesNo,
+  type Answer,
+  type Answers,
+  type FieldDefinition,
+  type IntakeStage,
+} from "@/lib/intake-field-definition";
 
-export interface Option {
-  value: string;
-  label: string;
-}
-export interface Condition {
-  field: string;
-  equals: Answer;
-}
-export interface FieldDefinition {
-  id: string;
-  label: string;
-  kind:
-    | "text"
-    | "email"
-    | "tel"
-    | "date"
-    | "select"
-    | "yesno"
-    | "textarea"
-    | "checkbox"
-    | "list";
-  required?: boolean;
-  helper?: string;
-  placeholder?: string;
-  options?: Option[];
-  when?: Condition;
-  width?: "half" | "full";
-  sensitive?: boolean;
-}
-export interface FieldGroup {
-  title: string;
-  description?: string;
-  fields: FieldDefinition[];
-}
-export interface IntakeStage {
-  id: string;
-  shortTitle: string;
-  title: string;
-  description: string;
-  time: string;
-  groups: FieldGroup[];
-}
-
-const yesNo = (
-  id: string,
-  label: string,
-  extras: Partial<FieldDefinition> = {},
-): FieldDefinition => ({
-  id,
-  label,
-  kind: "yesno",
-  required: true,
-  width: "full",
-  ...extras,
-});
-const text = (
-  id: string,
-  label: string,
-  extras: Partial<FieldDefinition> = {},
-): FieldDefinition => ({ id, label, kind: "text", required: true, ...extras });
-const optionalText = (
-  id: string,
-  label: string,
-  extras: Partial<FieldDefinition> = {},
-): FieldDefinition => ({ id, label, kind: "text", ...extras });
-const date = (
-  id: string,
-  label: string,
-  extras: Partial<FieldDefinition> = {},
-): FieldDefinition => ({ id, label, kind: "date", required: true, ...extras });
-const select = (
-  id: string,
-  label: string,
-  options: Option[],
-  extras: Partial<FieldDefinition> = {},
-): FieldDefinition => ({
-  id,
-  label,
-  kind: "select",
-  options,
-  required: true,
-  ...extras,
-});
-
-export const countries: Option[] = [
-  ["IND", "India"],
-  ["USA", "United States"],
-  ["GBR", "United Kingdom"],
-  ["CAN", "Canada"],
-  ["AUS", "Australia"],
-  ["ARE", "United Arab Emirates"],
-  ["SGP", "Singapore"],
-  ["CHN", "China"],
-  ["JPN", "Japan"],
-  ["DEU", "Germany"],
-  ["FRA", "France"],
-  ["BRA", "Brazil"],
-  ["MEX", "Mexico"],
-  ["ZAF", "South Africa"],
-  ["OTHER", "Another country / region"],
-].map(([value, label]) => ({ value, label }));
-
-const usStates: Option[] = [
-  ["AL", "Alabama"],
-  ["AK", "Alaska"],
-  ["AZ", "Arizona"],
-  ["CA", "California"],
-  ["CO", "Colorado"],
-  ["CT", "Connecticut"],
-  ["DC", "District of Columbia"],
-  ["FL", "Florida"],
-  ["GA", "Georgia"],
-  ["IL", "Illinois"],
-  ["MA", "Massachusetts"],
-  ["MD", "Maryland"],
-  ["NJ", "New Jersey"],
-  ["NY", "New York"],
-  ["NC", "North Carolina"],
-  ["OH", "Ohio"],
-  ["PA", "Pennsylvania"],
-  ["TX", "Texas"],
-  ["VA", "Virginia"],
-  ["WA", "Washington"],
-  ["OTHER", "Another state"],
-].map(([value, label]) => ({ value, label }));
-
-const occupations: Option[] = [
-  ["A", "Agriculture"],
-  ["AP", "Artist / performer"],
-  ["B", "Business"],
-  ["CM", "Communications"],
-  ["CS", "Computer science"],
-  ["C", "Culinary / food services"],
-  ["ED", "Education"],
-  ["EN", "Engineering"],
-  ["G", "Government"],
-  ["H", "Homemaker"],
-  ["LP", "Legal profession"],
-  ["MH", "Medical / health"],
-  ["M", "Military"],
-  ["NS", "Natural science"],
-  ["N", "Not employed"],
-  ["PS", "Physical sciences"],
-  ["RV", "Religious vocation"],
-  ["R", "Research"],
-  ["RT", "Retired"],
-  ["SS", "Social science"],
-  ["S", "Student"],
-  ["O", "Other"],
-].map(([value, label]) => ({ value, label }));
-
-const explainIfYes = (id: string, label: string): FieldDefinition[] => [
-  yesNo(id, label, { sensitive: true }),
-  {
-    id: `${id}.explain`,
-    label: "Please explain",
-    kind: "textarea",
-    required: true,
-    width: "full",
-    sensitive: true,
-    when: { field: id, equals: "YES" },
-    helper:
-      "Include dates and relevant details. You can review this before anything moves forward.",
-  },
-];
+export type {
+  Answer,
+  Answers,
+  Condition,
+  FieldDefinition,
+  FieldGroup,
+  IntakeStage,
+  Option,
+} from "@/lib/intake-field-definition";
 
 export const stages: IntakeStage[] = [
   {
@@ -179,32 +52,22 @@ export const stages: IntakeStage[] = [
       {
         title: "Application setup",
         description:
-          "The location where you plan to apply and a memorable answer used to resume the official form.",
+          "Choose where you plan to apply and provide the recovery answer intended for the official form.",
         fields: [
           select(
             "meta.locationCode",
             "U.S. embassy or consulate",
-            [
-              { value: "HYD", label: "Hyderabad, India" },
-              { value: "MUM", label: "Mumbai, India" },
-              { value: "NWD", label: "New Delhi, India" },
-              { value: "CHN", label: "Chennai, India" },
-              { value: "CLT", label: "Kolkata, India" },
-              { value: "OTHER", label: "Another location" },
-            ],
+            INTERVIEW_LOCATIONS,
             {
               helper:
                 "Choose the location where you expect to attend your visa interview.",
             },
           ),
-          text("meta.securityAnswer", "Security question answer", {
+          text("meta.securityAnswer", "What is your Mother's Maiden name?", {
             helper:
-              "Use something memorable. You may need this answer later if you return to the official form.",
+              "You may need this answer later if you return to the official form.",
             sensitive: true,
-          }),
-          optionalText("meta.applicationId", "Existing DS-160 application ID", {
-            helper:
-              "Leave blank if you have not started an application on CEAC.",
+            redactOnReview: true,
           }),
         ],
       },
@@ -218,17 +81,19 @@ export const stages: IntakeStage[] = [
             helper:
               "Include first and middle names. If your passport has none, enter FNU.",
           }),
-          yesNo(
-            "personalInformation1.nativeNameApplies",
+          booleanYesNo(
+            "personalInformation1.fullNameNativeAlphabetDoesNotApply",
             "Is your full name written in another alphabet?",
+            { YES: false, NO: true },
           ),
           text(
             "personalInformation1.fullNameNativeAlphabet",
             "Full name in native alphabet",
             {
               when: {
-                field: "personalInformation1.nativeNameApplies",
-                equals: "YES",
+                field:
+                  "personalInformation1.fullNameNativeAlphabetDoesNotApply",
+                equals: false,
               },
               helper:
                 "For example, Hindi, Telugu, Arabic, or another non-Latin script.",
@@ -252,7 +117,7 @@ export const stages: IntakeStage[] = [
               field: "personalInformation1.otherNamesUsed",
               equals: "YES",
             },
-            placeholder: "One full name per line",
+            placeholder: "Surname | given names, one name per line",
           },
           yesNo(
             "personalInformation1.telecodeNameUsed",
@@ -278,20 +143,12 @@ export const stages: IntakeStage[] = [
               },
             },
           ),
-          select("personalInformation1.sex", "Sex", [
-            { value: "M", label: "Male" },
-            { value: "F", label: "Female" },
-          ]),
-          select("personalInformation1.maritalStatus", "Marital status", [
-            { value: "S", label: "Single" },
-            { value: "M", label: "Married" },
-            { value: "C", label: "Common law marriage" },
-            { value: "P", label: "Civil union / domestic partnership" },
-            { value: "W", label: "Widowed" },
-            { value: "D", label: "Divorced" },
-            { value: "L", label: "Legally separated" },
-            { value: "O", label: "Other" },
-          ]),
+          select("personalInformation1.sex", "Sex", SEX),
+          select(
+            "personalInformation1.maritalStatus",
+            "Marital status",
+            MARITAL_STATUS,
+          ),
         ],
       },
       {
@@ -307,7 +164,7 @@ export const stages: IntakeStage[] = [
           select(
             "personalInformation1.countryRegionOfBirth",
             "Country / region of birth",
-            countries,
+            COUNTRIES_BIRTH,
           ),
         ],
       },
@@ -324,7 +181,11 @@ export const stages: IntakeStage[] = [
       {
         title: "Citizenship and national IDs",
         fields: [
-          select("personalInformation2.nationality", "Nationality", countries),
+          select(
+            "personalInformation2.nationality",
+            "Nationality",
+            COUNTRIES_NATIONALITY,
+          ),
           yesNo(
             "personalInformation2.hasOtherNationality",
             "Do you hold or have you held another nationality?",
@@ -339,8 +200,7 @@ export const stages: IntakeStage[] = [
               field: "personalInformation2.hasOtherNationality",
               equals: "YES",
             },
-            placeholder:
-              "One per line, for example: Canada — passport AB123456",
+            placeholder: "Country code | passport number (or NO), one per line",
           },
           yesNo(
             "personalInformation2.isPermanentResidentOfOtherCountry",
@@ -358,17 +218,19 @@ export const stages: IntakeStage[] = [
             },
             placeholder: "One country per line",
           },
-          yesNo(
-            "personalInformation2.hasNationalId",
+          booleanYesNo(
+            "personalInformation2.nationalIdentificationNumberDoesNotApply",
             "Do you have a national identification number?",
+            { YES: false, NO: true },
           ),
           text(
             "personalInformation2.nationalIdentificationNumber",
             "National identification number",
             {
               when: {
-                field: "personalInformation2.hasNationalId",
-                equals: "YES",
+                field:
+                  "personalInformation2.nationalIdentificationNumberDoesNotApply",
+                equals: false,
               },
               sensitive: true,
             },
@@ -397,13 +259,7 @@ export const stages: IntakeStage[] = [
       {
         title: "Passport",
         fields: [
-          select("passport.passportType", "Passport type", [
-            { value: "R", label: "Regular" },
-            { value: "O", label: "Official" },
-            { value: "D", label: "Diplomatic" },
-            { value: "L", label: "Laissez-passer" },
-            { value: "T", label: "Other" },
-          ]),
+          select("passport.passportType", "Passport type", PASSPORT_TYPE),
           text("passport.passportNumber", "Passport number", {
             sensitive: true,
           }),
@@ -414,11 +270,15 @@ export const stages: IntakeStage[] = [
           select(
             "passport.issuedCountry",
             "Issuing country / authority",
-            countries,
+            COUNTRIES_PASSPORT_ISSUED,
           ),
           text("passport.issuedCity", "City where issued"),
-          optionalText("passport.issuedState", "State / province where issued"),
-          select("passport.issuedInCountry", "Country where issued", countries),
+          text("passport.issuedState", "State / province where issued"),
+          select(
+            "passport.issuedInCountry",
+            "Country where issued",
+            COUNTRIES_PASSPORT_ISSUED_IN,
+          ),
           date("passport.issuedDate", "Issue date"),
           date("passport.expirationDate", "Expiration date"),
           yesNo(
@@ -433,7 +293,7 @@ export const stages: IntakeStage[] = [
             width: "full",
             when: { field: "passport.lostStolen", equals: "YES" },
             placeholder:
-              "Number, country, and a short explanation — one passport per line",
+              "Number (or NA) | country code | explanation, one per line",
           },
         ],
       },
@@ -450,23 +310,22 @@ export const stages: IntakeStage[] = [
       {
         title: "Purpose and timing",
         fields: [
-          select("travelInformation.purposeOfTrip", "Purpose of trip", [
-            { value: "B", label: "Business / tourism / medical (B)" },
-            { value: "F", label: "Academic student (F)" },
-            { value: "J", label: "Exchange visitor (J)" },
-            { value: "H", label: "Temporary worker (H)" },
-            { value: "L", label: "Intracompany transferee (L)" },
-            { value: "K", label: "Fiancé(e) (K)" },
-            { value: "M", label: "Vocational student (M)" },
-            { value: "O", label: "Extraordinary ability (O)" },
-            { value: "OTHER", label: "Another purpose" },
-          ]),
-          select("travelInformation.otherPurpose", "Visa class", [
-            { value: "B1-B2", label: "Business and tourism (B1/B2)" },
-            { value: "B1", label: "Business (B1)" },
-            { value: "B2", label: "Tourism / medical (B2)" },
-            { value: "OTHER", label: "Another visa class" },
-          ]),
+          select(
+            "travelInformation.purposeOfTrip",
+            "Purpose of trip",
+            PURPOSE_OF_TRIP,
+          ),
+          select(
+            "travelInformation.otherPurpose",
+            "Visa class",
+            OTHER_PURPOSE,
+            {
+              when: {
+                field: "travelInformation.purposeOfTrip",
+                equals: "B",
+              },
+            },
+          ),
           yesNo(
             "travelInformation.hasSpecificTravelPlans",
             "Have you made specific travel plans?",
@@ -502,9 +361,16 @@ export const stages: IntakeStage[] = [
               equals: "YES",
             },
           }),
-          text("travelInformation.lengthOfStay", "Intended length of stay", {
-            placeholder: "For example, 14 days",
-          }),
+          text(
+            "travelInformation.lengthOfStay.duration",
+            "Intended length of stay",
+            { placeholder: "For example, 14" },
+          ),
+          select(
+            "travelInformation.lengthOfStay.unit",
+            "Length of stay unit",
+            LENGTH_OF_STAY_UNIT,
+          ),
           {
             id: "travelInformation.locationsToVisit",
             label: "Places you plan to visit",
@@ -520,7 +386,7 @@ export const stages: IntakeStage[] = [
           text("travelInformation.usAddress.street", "Street address"),
           optionalText("travelInformation.usAddress.street2", "Address line 2"),
           text("travelInformation.usAddress.city", "City"),
-          select("travelInformation.usAddress.state", "State", usStates),
+          select("travelInformation.usAddress.state", "State", US_STATES),
           optionalText("travelInformation.usAddress.zipCode", "ZIP code"),
         ],
       },
@@ -530,18 +396,14 @@ export const stages: IntakeStage[] = [
           select(
             "travelInformation.payingForTrip",
             "Who is paying for your trip?",
-            [
-              { value: "S", label: "Self" },
-              { value: "O", label: "Other person" },
-              { value: "P", label: "Present employer" },
-              { value: "U", label: "U.S. employer" },
-              { value: "C", label: "Other company / organization" },
-            ],
+            PAYING_FOR_TRIP,
           ),
           text("travelInformation.payer", "Payer name and contact details", {
             width: "full",
             when: { field: "travelInformation.payingForTrip", equals: "O" },
             helper: "Include the person’s relationship to you.",
+            placeholder:
+              "Surname | given names | phone | email | relationship | street | city | state | ZIP | country code",
           }),
         ],
       },
@@ -572,7 +434,8 @@ export const stages: IntakeStage[] = [
             required: true,
             width: "full",
             when: { field: "travelCompanions.travelingAsGroup", equals: "NO" },
-            placeholder: "Full name — relationship, one person per line",
+            placeholder:
+              "Surname | given names | relationship code, one per line",
           },
         ],
       },
@@ -600,7 +463,8 @@ export const stages: IntakeStage[] = [
             required: true,
             width: "full",
             when: { field: "previousUsTravel.beenToUs", equals: "YES" },
-            placeholder: "Arrival date — length of stay, one visit per line",
+            placeholder:
+              "YYYY-MM-DD | duration | unit code, one visit per line",
           },
           yesNo(
             "previousUsTravel.hasUsDriversLicense",
@@ -617,7 +481,7 @@ export const stages: IntakeStage[] = [
               field: "previousUsTravel.hasUsDriversLicense",
               equals: "YES",
             },
-            placeholder: "License number — state, one per line",
+            placeholder: "License number | state code, one per line",
           },
         ],
       },
@@ -635,7 +499,8 @@ export const stages: IntakeStage[] = [
             required: true,
             width: "full",
             when: { field: "previousUsTravel.visaIssued", equals: "YES" },
-            placeholder: "Issue date, visa number, class, and place issued",
+            placeholder:
+              "YYYY-MM-DD | visa number or NA | same type YES/NO | same location YES/NO | ten-printed YES/NO",
           },
           yesNo(
             "previousUsTravel.visaLostStolen",
@@ -699,7 +564,7 @@ export const stages: IntakeStage[] = [
           text("addressPhone.city", "City"),
           optionalText("addressPhone.state", "State / province"),
           optionalText("addressPhone.postalCode", "Postal code"),
-          select("addressPhone.country", "Country", countries),
+          select("addressPhone.country", "Country", COUNTRIES_ADDRESS),
           yesNo(
             "addressPhone.mailingSameAsHome",
             "Is your mailing address the same as your home address?",
@@ -711,6 +576,8 @@ export const stages: IntakeStage[] = [
             required: true,
             width: "full",
             when: { field: "addressPhone.mailingSameAsHome", equals: "NO" },
+            placeholder:
+              "Street | line 2 or NA | city | state or NA | postal code or NA | country code",
           },
         ],
       },
@@ -772,7 +639,7 @@ export const stages: IntakeStage[] = [
             required: true,
             width: "full",
             when: { field: "addressPhone.socialMedia", equals: "YES" },
-            placeholder: "Platform — username or identifier, one per line",
+            placeholder: "Platform code | username or identifier, one per line",
             helper: "Do not enter passwords.",
           },
         ],
@@ -782,30 +649,27 @@ export const stages: IntakeStage[] = [
         description:
           "This can be a person, hotel, school, employer, or other organization that knows about your trip.",
         fields: [
-          yesNo(
+          booleanYesNo(
             "usContact.nameDoesNotApply",
             "Are you using an organization instead of a named person?",
+            { YES: true, NO: false },
           ),
           text("usContact.surname", "Contact surname", {
-            when: { field: "usContact.nameDoesNotApply", equals: "NO" },
+            when: { field: "usContact.nameDoesNotApply", equals: false },
           }),
           text("usContact.givenNames", "Contact given names", {
-            when: { field: "usContact.nameDoesNotApply", equals: "NO" },
+            when: { field: "usContact.nameDoesNotApply", equals: false },
           }),
           optionalText("usContact.organization", "Organization name"),
-          select("usContact.relationship", "Relationship to you", [
-            { value: "R", label: "Relative" },
-            { value: "S", label: "Spouse" },
-            { value: "C", label: "Friend" },
-            { value: "B", label: "Business associate" },
-            { value: "P", label: "Employer" },
-            { value: "H", label: "School official" },
-            { value: "O", label: "Other" },
-          ]),
+          select(
+            "usContact.relationship",
+            "Relationship to you",
+            US_CONTACT_RELATIONSHIP,
+          ),
           text("usContact.street", "Street address"),
           optionalText("usContact.street2", "Address line 2"),
           text("usContact.city", "City"),
-          select("usContact.state", "State", usStates),
+          select("usContact.state", "State", US_STATES),
           text("usContact.postalCode", "ZIP code"),
           {
             id: "usContact.phone",
@@ -829,19 +693,29 @@ export const stages: IntakeStage[] = [
       {
         title: "Father",
         fields: [
-          yesNo("family.fatherNameKnown", "Do you know your father’s name?"),
+          booleanYesNo(
+            "family.fatherSurnameUnknown",
+            "Do you know your father’s surname?",
+            { YES: false, NO: true },
+          ),
           text("family.fatherSurname", "Father’s surname", {
-            when: { field: "family.fatherNameKnown", equals: "YES" },
+            when: { field: "family.fatherSurnameUnknown", equals: false },
           }),
+          booleanYesNo(
+            "family.fatherGivenNamesUnknown",
+            "Do you know your father’s given names?",
+            { YES: false, NO: true },
+          ),
           text("family.fatherGivenNames", "Father’s given names", {
-            when: { field: "family.fatherNameKnown", equals: "YES" },
+            when: { field: "family.fatherGivenNamesUnknown", equals: false },
           }),
-          yesNo(
-            "family.fatherDobKnown",
+          booleanYesNo(
+            "family.fatherDobUnknown",
             "Do you know your father’s date of birth?",
+            { YES: false, NO: true },
           ),
           date("family.fatherDateOfBirth", "Father’s date of birth", {
-            when: { field: "family.fatherDobKnown", equals: "YES" },
+            when: { field: "family.fatherDobUnknown", equals: false },
           }),
           yesNo("family.fatherLiveInUs", "Does your father live in the U.S.?"),
           select(
@@ -860,19 +734,29 @@ export const stages: IntakeStage[] = [
       {
         title: "Mother",
         fields: [
-          yesNo("family.motherNameKnown", "Do you know your mother’s name?"),
+          booleanYesNo(
+            "family.motherSurnameUnknown",
+            "Do you know your mother’s surname?",
+            { YES: false, NO: true },
+          ),
           text("family.motherSurname", "Mother’s surname", {
-            when: { field: "family.motherNameKnown", equals: "YES" },
+            when: { field: "family.motherSurnameUnknown", equals: false },
           }),
+          booleanYesNo(
+            "family.motherGivenNamesUnknown",
+            "Do you know your mother’s given names?",
+            { YES: false, NO: true },
+          ),
           text("family.motherGivenNames", "Mother’s given names", {
-            when: { field: "family.motherNameKnown", equals: "YES" },
+            when: { field: "family.motherGivenNamesUnknown", equals: false },
           }),
-          yesNo(
-            "family.motherDobKnown",
+          booleanYesNo(
+            "family.motherDobUnknown",
             "Do you know your mother’s date of birth?",
+            { YES: false, NO: true },
           ),
           date("family.motherDateOfBirth", "Mother’s date of birth", {
-            when: { field: "family.motherDobKnown", equals: "YES" },
+            when: { field: "family.motherDobUnknown", equals: false },
           }),
           yesNo("family.motherLiveInUs", "Does your mother live in the U.S.?"),
           select(
@@ -907,7 +791,7 @@ export const stages: IntakeStage[] = [
             width: "full",
             when: { field: "family.immediateUsRelative", equals: "YES" },
             placeholder:
-              "Full name — relationship — U.S. status, one person per line",
+              "Surname | given names | relationship | U.S. status, one per line",
           },
           yesNo(
             "family.otherUsRelative",
@@ -928,7 +812,7 @@ export const stages: IntakeStage[] = [
       {
         title: "Current work or study",
         fields: [
-          select("workEducation.occupation", "Present occupation", occupations),
+          select("workEducation.occupation", "Present occupation", OCCUPATION),
           text(
             "workEducation.notEmployedExplain",
             "Explain your current situation",
@@ -943,7 +827,7 @@ export const stages: IntakeStage[] = [
           text("workEducation.employerCity", "City"),
           optionalText("workEducation.employerState", "State / province"),
           optionalText("workEducation.employerPostalCode", "Postal code"),
-          select("workEducation.employerCountry", "Country", countries),
+          select("workEducation.employerCountry", "Country", COUNTRIES_BIRTH),
           {
             id: "workEducation.employerPhone",
             label: "Work or school phone",
@@ -982,7 +866,7 @@ export const stages: IntakeStage[] = [
               equals: "YES",
             },
             placeholder:
-              "Employer — title — address — start/end dates — duties, one per line",
+              "Employer | title | country code | city | start YYYY-MM-DD | end YYYY-MM-DD | duties",
           },
           yesNo(
             "previousWorkEducation.otherEducation",
@@ -999,7 +883,7 @@ export const stages: IntakeStage[] = [
               equals: "YES",
             },
             placeholder:
-              "School — address — course — start/end dates, one per line",
+              "School | course | country code | city | start YYYY-MM-DD | end YYYY-MM-DD",
           },
         ],
       },
@@ -1087,7 +971,8 @@ export const stages: IntakeStage[] = [
               field: "additionalWorkEducation.militaryService",
               equals: "YES",
             },
-            placeholder: "Country, branch, rank, specialty, and dates",
+            placeholder:
+              "Country code | branch | rank | specialty | start YYYY-MM-DD | end YYYY-MM-DD",
           },
           yesNo(
             "additionalWorkEducation.insurgentOrg",
@@ -1277,6 +1162,12 @@ export function labelForAnswer(
   answer: Answer | undefined,
 ) {
   if (Array.isArray(answer)) return answer.join(", ");
+  if (field.yesNoValues && typeof answer === "boolean") {
+    const option = Object.entries(field.yesNoValues).find(
+      ([, mappedValue]) => mappedValue === answer,
+    )?.[0];
+    if (option) return option === "YES" ? "Yes" : "No";
+  }
   if (answer === true) return "Yes";
   if (answer === false) return "No";
   if (!answer) return "Not answered";

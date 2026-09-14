@@ -84,6 +84,38 @@ export function IntakeForm() {
     }
   }
 
+  function NavActions({ placement }: { placement: "top" | "bottom" }) {
+    return (
+      <div className={`actions actions-${placement}`}>
+        <button
+          type="button"
+          disabled={step === 0}
+          onClick={() => {
+            setTouched(false);
+            setError(null);
+            setStep((s) => s - 1);
+          }}
+        >
+          Back
+        </button>
+        {step < STEPS.length - 1 ? (
+          <button type="button" className="primary" onClick={goNext}>
+            Next
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="primary"
+            disabled={submitting}
+            onClick={onSubmit}
+          >
+            {submitting ? "Submitting…" : "Submit job"}
+          </button>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="page">
       <header className="hero">
@@ -117,6 +149,7 @@ export function IntakeForm() {
         <h2>
           Step {step + 1}: {current.title}
         </h2>
+        <NavActions placement="top" />
         <SchemaForm
           sectionKey={current.key}
           value={(app[current.key] as Record<string, unknown>) ?? {}}
@@ -127,33 +160,7 @@ export function IntakeForm() {
           }}
         />
         {error && <pre className="error">{error}</pre>}
-        <div className="actions">
-          <button
-            type="button"
-            disabled={step === 0}
-            onClick={() => {
-              setTouched(false);
-              setError(null);
-              setStep((s) => s - 1);
-            }}
-          >
-            Back
-          </button>
-          {step < STEPS.length - 1 ? (
-            <button type="button" className="primary" onClick={goNext}>
-              Next
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="primary"
-              disabled={submitting}
-              onClick={onSubmit}
-            >
-              {submitting ? "Submitting…" : "Submit job"}
-            </button>
-          )}
-        </div>
+        <NavActions placement="bottom" />
         {touched && sectionHasErrors() && (
           <p className="hint">Resolve field errors above to continue.</p>
         )}

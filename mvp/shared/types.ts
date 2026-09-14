@@ -15,9 +15,14 @@ export interface JobRecord {
   payload: Ds160Application;
   pdf_path: string | null;
   error: string | null;
+  pending_interaction: PendingInteraction | null;
   created_at: string;
   updated_at: string;
 }
+
+export type PendingInteraction =
+  | { type: "captcha"; imageBase64: string }
+  | { type: "correction"; errors: ValidationErrorItem[] };
 
 export interface ValidationErrorItem {
   message: string;
