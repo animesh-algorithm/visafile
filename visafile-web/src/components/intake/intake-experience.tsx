@@ -204,17 +204,17 @@ export function IntakeExperience() {
                 Saving…
               </>
             ) : saveState === "error" ? (
-              <span className="text-[var(--error)]">Couldn’t save locally</span>
+              <span className="text-[var(--error)]">Couldn’t save changes</span>
             ) : (
               <>
                 <Check className="size-4 text-[var(--success)]" />
-                Saved in this browser
+                Saved on this device
               </>
             )}
-            <Tooltip content="This prototype stores your answers only in this browser. Nothing is transmitted.">
+            <Tooltip content="Your answers are saved on this device while you work. Nothing is sent while you are only filling out the draft.">
               <button
                 className="grid size-9 place-items-center rounded-full hover:bg-[var(--surface-soft)]"
-                aria-label="About local saving"
+                aria-label="About saving your answers"
               >
                 <CircleHelp className="size-4" />
               </button>
@@ -436,7 +436,7 @@ export function IntakeExperience() {
                   size="lg"
                   onClick={() => setCompleted(true)}
                 >
-                  Complete prototype <Check className="size-5" />
+                  Finish review <Check className="size-5" />
                 </Button>
               ) : (
                 <Button
@@ -627,7 +627,7 @@ function Review({
         <ShieldCheck className="size-5 shrink-0" />
         <p>
           <strong>Nothing will be submitted.</strong> This screen only checks
-          the browser-local prototype draft.
+          the answers saved on this device.
         </p>
       </div>
       {stages.slice(0, -1).map((stage, stageIndex) => {
@@ -761,15 +761,14 @@ function SuccessState({
           <CheckCircle2 className="size-10" />
         </span>
         <p className="eyebrow mt-7 text-[var(--yellow)]">
-          Prototype intake complete
+          Intake review complete
         </p>
         <h1 className="display mt-3 text-5xl leading-tight tracking-[-.04em] sm:text-6xl">
           Your answers are ready for review.
         </h1>
         <p className="mx-auto mt-5 max-w-xl text-lg leading-8 text-white/75">
-          No DS-160 was submitted. In the future workflow, this is where
-          VisaFile would prepare the official form and pause for human review
-          whenever needed.
+          No DS-160 was submitted. VisaFile pauses before any official filing
+          step so you can review what happens next.
         </p>
         <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
           <Button variant="light" size="lg" onClick={onReview}>

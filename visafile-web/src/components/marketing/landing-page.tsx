@@ -28,12 +28,12 @@ const steps = [
   {
     n: "03",
     title: "A human stays in the loop",
-    copy: "When automation needs judgment, you can review, correct, and approve what happens next.",
+    copy: "When something needs judgment, you can review, correct, and approve what happens next.",
   },
   {
     n: "04",
     title: "Keep your confirmation",
-    copy: "The eventual service returns the final confirmation PDF in one easy-to-find place.",
+    copy: "When your DS-160 is complete, your confirmation can be kept in one easy-to-find place.",
   },
 ];
 
@@ -130,7 +130,7 @@ export function LandingPage() {
             <PainPoint
               icon={<Clock3 />}
               title="Easy to lose progress"
-              copy="Your prototype draft stays in this browser as you work."
+              copy="Your answers stay on this device as you work."
               color="bg-[var(--mint)]"
             />
           </div>
@@ -199,13 +199,13 @@ export function LandingPage() {
             <div className="mt-10 space-y-7">
               <TrustRow
                 icon={<LockKeyhole />}
-                title="Your prototype answers stay local"
-                copy="This phase uses browser storage only. Nothing is transmitted or filed."
+                title="Your answers stay with you"
+                copy="Nothing is sent or filed while you are only filling out the draft."
               />
               <TrustRow
                 icon={<HeartHandshake />}
                 title="Human review has a purpose"
-                copy="Automation handles repetition; judgment and final approval remain visible to you."
+                copy="Repetitive steps can be handled for you; judgment and final approval remain visible to you."
               />
               <TrustRow
                 icon={<FileCheck2 />}
@@ -224,7 +224,7 @@ export function LandingPage() {
             Ready to make a difficult form feel manageable?
           </h2>
           <p className="mx-auto mt-5 max-w-xl leading-7 text-[var(--muted)]">
-            You can stop and return anytime. This prototype takes about 12–15
+            You can stop and return anytime. The guided intake takes about 12–15
             minutes to explore.
           </p>
           <Button asChild size="lg" className="mt-8">
@@ -239,9 +239,9 @@ export function LandingPage() {
         <div className="page-shell flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <Brand />
           <p className="max-w-xl text-xs leading-5 text-[var(--muted)]">
-            VisaFile is a private prototype and is not affiliated with the U.S.
-            government. It does not provide legal advice or submit a DS-160 in
-            this phase.
+            VisaFile is not affiliated with the U.S. government. It does not
+            provide legal advice or submit a DS-160 while you are only filling
+            out the draft.
           </p>
         </div>
       </footer>

@@ -199,7 +199,7 @@ export const stages: IntakeStage[] = [
           ),
           text("meta.securityAnswer", "Security question answer", {
             helper:
-              "Use something memorable. In the final service this helps recover an official CEAC application.",
+              "Use something memorable. You may need this answer later if you return to the official form.",
             sensitive: true,
           }),
           optionalText("meta.applicationId", "Existing DS-160 application ID", {
