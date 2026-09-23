@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Download,
+  ExternalLink,
   LoaderCircle,
   LockKeyhole,
   RefreshCw,
@@ -21,6 +22,7 @@ type Status =
   | "queueing"
   | "queued"
   | "filling"
+  | "awaiting_browser_check"
   | "awaiting_captcha"
   | "awaiting_correction"
   | "submitting"
@@ -40,6 +42,12 @@ interface ApplicationState {
   error: string | null;
   authorizeOfficialSubmission: boolean;
   pendingInteraction:
+    | {
+        type: "browser_check";
+        browserUrl: string;
+        expiresAt: string;
+        reason: string;
+      }
     | { type: "captcha"; imageBase64: string }
     | { type: "correction"; errors: CorrectionError[] }
     | null;
@@ -52,7 +60,7 @@ function workerErrorCopy(error: string | null) {
   }
 
   if (/cloudflare|attention required/i.test(error)) {
-    return "CEAC showed a browser security check before the form loaded. VisaFile can only ask for the official CAPTCHA after that page is available. On this computer, restart the worker with HEADLESS=false, complete the check in Chrome, then return here for CAPTCHA.";
+    return "CEAC showed a browser security check before the form loaded. A human must complete that check in the active browser session before VisaFile can show the official CAPTCHA.";
   }
 
   return error;
@@ -77,6 +85,12 @@ const STATUS_COPY: Record<
     label: "Completing the DS-160",
     detail: "VisaFile is entering your reviewed answers on the official form.",
     progress: 55,
+  },
+  awaiting_browser_check: {
+    label: "Browser security check needed",
+    detail:
+      "CEAC requires a human browser check before VisaFile can show the official CAPTCHA.",
+    progress: 62,
   },
   awaiting_captcha: {
     label: "Your help is needed",
@@ -225,6 +239,10 @@ export function ApplicationTracker({
   }
 
   const copy = state ? STATUS_COPY[state.status] : null;
+  const browserCheck =
+    state?.pendingInteraction?.type === "browser_check"
+      ? state.pendingInteraction
+      : null;
   const correctionErrors =
     state?.pendingInteraction?.type === "correction"
       ? state.pendingInteraction.errors
@@ -361,6 +379,43 @@ export function ApplicationTracker({
                 Send corrections <Send className="size-4" />
               </Button>
             </form>
+          ) : state.status === "awaiting_browser_check" && browserCheck ? (
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="mt-0.5 size-6 shrink-0 text-[var(--primary)]" />
+              <div>
+                <p className="font-extrabold">
+                  Complete CEAC’s browser security check.
+                </p>
+                <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+                  {browserCheck.reason} Keep this page open after completing it.
+                  Once CEAC shows the official CAPTCHA, VisaFile will display
+                  the image and answer field here.
+                </p>
+                {browserCheck.browserUrl && (
+                  <Button asChild className="mt-4">
+                    <a
+                      href={browserCheck.browserUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Open secure browser <ExternalLink className="size-4" />
+                    </a>
+                  </Button>
+                )}
+                <p className="mt-3 text-xs font-bold text-[var(--muted)]">
+                  Session expires{" "}
+                  {new Date(browserCheck.expiresAt).toLocaleString()}.
+                </p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => void refresh()}
+                  className="mt-3"
+                >
+                  <RefreshCw className="size-4" /> Check again
+                </Button>
+              </div>
+            </div>
           ) : state.status === "completed" ? (
             <div>
               <div className="flex items-start gap-3 text-[var(--success)]">

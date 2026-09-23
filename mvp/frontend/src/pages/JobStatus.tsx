@@ -20,6 +20,7 @@ import type {
 const STATUS_ORDER: Status[] = [
   "queued",
   "filling",
+  "awaiting_browser_check",
   "awaiting_captcha",
   "awaiting_correction",
   "submitting",
@@ -55,6 +56,9 @@ export function JobStatusPage() {
   }, [status]);
 
   const statusLabel = STATUS_LABELS[status] ?? status;
+  const awaitingBrowserSecurity =
+    status === "awaiting_browser_check" ||
+    (status === "awaiting_captcha" && detail && !captchaImage);
 
   useEffect(() => {
     if (!jobId) return;
@@ -235,6 +239,18 @@ export function JobStatusPage() {
               Submit CAPTCHA
             </button>
           </div>
+        </section>
+      )}
+
+      {awaitingBrowserSecurity && (
+        <section className="panel highlight">
+          <h2>Browser security check needed</h2>
+          <p className="hint">
+            Complete the verification in the open Chrome window. Leave this page
+            open; automation will continue automatically after CEAC loads. Once
+            CEAC shows the official CAPTCHA, VisaFile will display the image and
+            answer field here.
+          </p>
         </section>
       )}
 

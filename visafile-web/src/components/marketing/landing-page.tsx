@@ -340,8 +340,8 @@ function HeroDocument() {
             Enter it exactly as it appears in your passport.
           </p>
           <div className="mt-6 space-y-4">
-            <FakeInput label="Surname" value="PATEL" />
-            <FakeInput label="Given names" value="PRIYA ANIKA" />
+            <FakeInput label="Surname" value="JORDAN" />
+            <FakeInput label="Given names" value="HAL" />
           </div>
         </div>
         <div className="flex items-center justify-between border-t border-[var(--border)] pt-5">

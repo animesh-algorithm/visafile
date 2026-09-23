@@ -1,8 +1,11 @@
 import "dotenv/config";
-import puppeteer from "puppeteer";
 import { chmod, mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { DS160_SELECTORS } from "./selectors.js";
+import {
+  browserCheckTimeoutMs,
+  createBrowserSession,
+} from "./browser-session.js";
 import {
   jobContext,
   configureJobContext,
@@ -107,6 +110,9 @@ const selectPostbackTimeoutMs =
   Number(process.env.DS160_SELECT_POSTBACK_MS) || 10_000;
 // Brief pause after a postback settles (or after confirming none fired).
 const postbackSettleMs = Number(process.env.DS160_SETTLE_MS) || 150;
+// Remote/headed runs can pause while a human completes CEAC's security page.
+const cloudflareManualTimeoutMs =
+  browserCheckTimeoutMs();
 
 const runStartedAt = Date.now();
 let lastLogAt = runStartedAt;
@@ -160,28 +166,19 @@ async function sleep(ms, reason = "wait") {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function launchBrowser() {
-  const options = {
-    headless,
-    defaultViewport: headless ? { width: 1280, height: 900 } : null,
-    args: headless ? ["--disable-dev-shm-usage"] : ["--start-maximized"],
-  };
-  try {
-    return await puppeteer.launch({ ...options, channel: chromeChannel });
-  } catch (error) {
-    log(
-      `Could not launch Chrome channel="${chromeChannel}": ${error.message}. Falling back to bundled Chrome.`,
-    );
-    return await puppeteer.launch(options);
-  }
-}
-
 async function describePage(page) {
-  const title = await page.title();
+  const title = await page.title().catch(() => "");
+  const bodyText = await page
+    .evaluate(() => document.body?.innerText || "")
+    .catch(() => "");
+  const cloudflareSignals = `${title}\n${bodyText}`;
   return {
     title,
     url: page.url(),
-    cloudflare: /cloudflare|attention required|just a moment/i.test(title),
+    cloudflare:
+      /cloudflare|attention required|just a moment|performing security verification|security service to protect against malicious bots|verifying/i.test(
+        cloudflareSignals,
+      ),
   };
 }
 
@@ -199,17 +196,119 @@ function locationPageUnavailableError({ title, url, cloudflare }) {
   );
 }
 
-async function waitForLocationDropdown(page) {
-  const immediate = await describePage(page);
-  if (immediate.cloudflare && /attention required/i.test(immediate.title)) {
-    throw locationPageUnavailableError(immediate);
+function browserCheckTimedOutError() {
+  return new Error(
+    "CEAC browser security check was not completed before the session expired. Start a new automation run.",
+  );
+}
+
+function canWaitForBrowserCheck(browserSession) {
+  return browserSession.mode === "remote" || !headless;
+}
+
+function isPageTransitionError(error) {
+  return /Execution context was destroyed|Cannot find context with specified id|detached Frame|Navigating frame was detached/i.test(
+    error?.message || "",
+  );
+}
+
+async function waitForLocationDropdown(page, browserSession) {
+  const deadline = Date.now() + cloudflareManualTimeoutMs;
+  let announcedCloudflare = false;
+
+  while (Date.now() < deadline) {
+    let current;
+    try {
+      current = await describePage(page);
+    } catch (error) {
+      if (isPageTransitionError(error)) {
+        await sleep(1_000, "page transition");
+        continue;
+      }
+      throw error;
+    }
+
+    if (current.cloudflare) {
+      if (!canWaitForBrowserCheck(browserSession)) {
+        throw locationPageUnavailableError(current);
+      }
+
+      if (!announcedCloudflare) {
+        announcedCloudflare = true;
+        const expiresAt = new Date(deadline).toISOString();
+        const reason =
+          "CEAC requires a browser security check before VisaFile can show the official CAPTCHA.";
+        const detail = browserSession.browserUrl
+          ? `${reason} Open the secure browser session and complete the check; automation will continue automatically after CEAC loads.`
+          : browserSession.mode === "remote"
+            ? `${reason} The remote browser session has no view URL configured; complete the check in the provider console.`
+            : `${reason} Complete the check in the open Chrome window; automation will continue automatically after CEAC loads.`;
+        log(detail);
+        if (jobContext.hooks.onBrowserCheckNeeded) {
+          await jobContext.hooks.onBrowserCheckNeeded({
+            browserUrl: browserSession.browserUrl,
+            expiresAt,
+            reason,
+          });
+        } else if (jobContext.hooks.onStatus) {
+          await jobContext.hooks.onStatus("awaiting_browser_check", detail);
+        }
+      }
+
+      const remainingMs = Math.max(deadline - Date.now(), 1);
+      await page
+        .waitForSelector(LOCATION_SELECTOR, {
+          timeout: Math.min(5_000, remainingMs),
+        })
+        .catch(() => null);
+      const hasLocationDropdown = await page.$(LOCATION_SELECTOR).catch(() => {
+        return null;
+      });
+      if (hasLocationDropdown) {
+        if (jobContext.hooks.onStatus) {
+          await jobContext.hooks.onStatus("filling");
+        }
+        return;
+      }
+      continue;
+    }
+
+    try {
+      await page.waitForSelector(LOCATION_SELECTOR, {
+        timeout: Math.min(10_000, Math.max(deadline - Date.now(), 1)),
+      });
+      if (announcedCloudflare && jobContext.hooks.onStatus) {
+        await jobContext.hooks.onStatus("filling");
+      }
+      return;
+    } catch (error) {
+      if (isPageTransitionError(error)) {
+        await sleep(1_000, "page transition");
+        continue;
+      }
+
+      let afterWait;
+      try {
+        afterWait = await describePage(page);
+      } catch (describeError) {
+        if (isPageTransitionError(describeError)) {
+          await sleep(1_000, "page transition");
+          continue;
+        }
+        throw describeError;
+      }
+
+      if (!afterWait.cloudflare && Date.now() >= deadline) {
+        throw locationPageUnavailableError(afterWait);
+      }
+    }
   }
 
-  try {
-    await page.waitForSelector(LOCATION_SELECTOR, { timeout: 90_000 });
-  } catch {
-    throw locationPageUnavailableError(await describePage(page));
+  const current = await describePage(page);
+  if (current.cloudflare && canWaitForBrowserCheck(browserSession)) {
+    throw browserCheckTimedOutError();
   }
+  throw locationPageUnavailableError(current);
 }
 
 async function isAspNetAsyncPostBack(page) {
@@ -3422,16 +3521,25 @@ export async function runDs160Job(jobData, hooks = {}) {
     await jobContext.hooks.onStatus("filling");
   }
 
-  const browser = await launchBrowser();
+  const browserSession = await createBrowserSession({
+    headless,
+    chromeChannel,
+    log,
+  });
+  const { browser } = browserSession;
 
   await browser
     .defaultBrowserContext()
     .setPermission(new URL(DS160_URL).origin, {
       permission: { name: "local-network-access" },
       state: "granted",
+    })
+    .catch((error) => {
+      log(`Could not set local-network-access permission: ${error.message}`);
     });
 
-  const [page] = await browser.pages();
+  const pages = await browser.pages();
+  const page = pages[0] || (await browser.newPage());
   page.setDefaultTimeout(30_000);
 
   page.on("dialog", async (dialog) => {
@@ -3456,7 +3564,7 @@ export async function runDs160Job(jobData, hooks = {}) {
     );
 
     await timed("wait for location dropdown", () =>
-      waitForLocationDropdown(page),
+      waitForLocationDropdown(page, browserSession),
     );
 
     const selectedLocation = await page.$eval(

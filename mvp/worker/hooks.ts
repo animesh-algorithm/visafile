@@ -28,8 +28,28 @@ function enrichErrors(errors: ValidationErrorItem[]): ValidationErrorItem[] {
 export function createJobHooks(jobId: string): Ds160JobHooks {
   return {
     async onStatus(status: JobStatus, detail?: string) {
-      await updateJobStatus(jobId, status);
+      await updateJobStatus(
+        jobId,
+        status,
+        status === "filling" || status === "submitting"
+          ? { pending_interaction: null }
+          : undefined,
+      );
       await publishStatus(jobId, status, detail);
+    },
+
+    async onBrowserCheckNeeded(interaction) {
+      await updateJobStatus(jobId, "awaiting_browser_check", {
+        pending_interaction: {
+          type: "browser_check",
+          ...interaction,
+        },
+      });
+      await publishStatus(
+        jobId,
+        "awaiting_browser_check",
+        interaction.reason,
+      );
     },
 
     async onCaptchaNeeded(imageBuffer: Buffer): Promise<string> {

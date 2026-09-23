@@ -6,6 +6,7 @@ import type { JobStatus } from "../../shared/types.js";
 const STUCK: JobStatus[] = [
   "queued",
   "filling",
+  "awaiting_browser_check",
   "awaiting_captcha",
   "awaiting_correction",
   "submitting",

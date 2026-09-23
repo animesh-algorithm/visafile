@@ -334,6 +334,7 @@ export const STATUS_LABELS: Record<string, string> = {
   queued: "Queued",
   filling: "Filling form",
   awaiting_captcha: "CAPTCHA needed",
+  awaiting_browser_check: "Browser check needed",
   awaiting_correction: "Needs your corrections",
   submitting: "Submitting",
   completed: "Completed",

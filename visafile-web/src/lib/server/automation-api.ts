@@ -7,6 +7,7 @@ export interface AutomationStatus {
   status:
     | "queued"
     | "filling"
+    | "awaiting_browser_check"
     | "awaiting_captcha"
     | "awaiting_correction"
     | "submitting"
@@ -15,6 +16,12 @@ export interface AutomationStatus {
   pdfPath: string | null;
   error: string | null;
   pendingInteraction:
+    | {
+        type: "browser_check";
+        browserUrl: string;
+        expiresAt: string;
+        reason: string;
+      }
     | { type: "captcha"; imageBase64: string }
     | {
         type: "correction";

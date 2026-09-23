@@ -3,6 +3,7 @@ import type { Ds160Application } from "./schema/ds160-application.js";
 export type JobStatus =
   | "queued"
   | "filling"
+  | "awaiting_browser_check"
   | "awaiting_captcha"
   | "awaiting_correction"
   | "submitting"
@@ -21,6 +22,12 @@ export interface JobRecord {
 }
 
 export type PendingInteraction =
+  | {
+      type: "browser_check";
+      browserUrl: string;
+      expiresAt: string;
+      reason: string;
+    }
   | { type: "captcha"; imageBase64: string }
   | { type: "correction"; errors: ValidationErrorItem[] };
 
@@ -47,6 +54,11 @@ export interface Ds160JobHooks {
   onValidationError: (
     errors: ValidationErrorItem[],
   ) => Promise<FieldCorrection[]>;
+  onBrowserCheckNeeded?: (interaction: {
+    browserUrl: string;
+    expiresAt: string;
+    reason: string;
+  }) => void | Promise<void>;
   onStatus?: (status: JobStatus, detail?: string) => void | Promise<void>;
 }
 

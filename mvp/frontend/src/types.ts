@@ -3,6 +3,7 @@ export type YesNo = "YES" | "NO";
 export type JobStatus =
   | "queued"
   | "filling"
+  | "awaiting_browser_check"
   | "awaiting_captcha"
   | "awaiting_correction"
   | "submitting"
