@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { EarlyAccessForm } from "@/components/marketing/early-access-form";
 import {
   ArrowRight,
   Check,
@@ -51,9 +51,9 @@ export function LandingPage() {
           <a href="#questions">Questions</a>
         </div>
         <Button asChild size="sm">
-          <Link href="/intake">
-            Start my DS-160 <ArrowRight className="size-4" />
-          </Link>
+          <a href="#early-access">
+            Request early access <ArrowRight className="size-4" />
+          </a>
         </Button>
       </nav>
 
@@ -61,21 +61,20 @@ export function LandingPage() {
         <div className="page-shell grid min-h-[660px] items-center gap-12 py-16 lg:grid-cols-[1.05fr_.95fr] lg:py-24">
           <div className="max-w-2xl">
             <p className="eyebrow mb-5 text-[var(--yellow)]">
-              The calmer way through the DS-160
+              VisaFile is coming soon
             </p>
             <h1 className="display text-5xl leading-[.98] tracking-[-.045em] sm:text-6xl lg:text-[5.1rem]">
               Your visa form, without the maze.
             </h1>
             <p className="mt-7 max-w-xl text-lg leading-8 text-white/82">
-              VisaFile turns the DS-160 into one guided conversation—then
-              prepares the repetitive work for you, with a real person in the
-              loop.
+              We’re building a calmer way to prepare your DS-160. Explore how
+              VisaFile is designed to work, then request early access.
             </p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
               <Button asChild variant="light" size="lg">
-                <Link href="/intake">
-                  Start my DS-160 <ArrowRight className="size-5" />
-                </Link>
+                <a href="#early-access">
+                  Request early access <ArrowRight className="size-5" />
+                </a>
               </Button>
               <a
                 href="#how-it-works"
@@ -86,11 +85,12 @@ export function LandingPage() {
             </div>
             <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/76">
               <span className="flex items-center gap-2">
-                <Check className="size-4 text-[var(--yellow)]" /> No account
-                needed
+                <Check className="size-4 text-[var(--yellow)]" /> Join with your
+                email
               </span>
               <span className="flex items-center gap-2">
-                <Check className="size-4 text-[var(--yellow)]" /> Save as you go
+                <Check className="size-4 text-[var(--yellow)]" /> Be first to
+                hear when access opens
               </span>
               <span className="flex items-center gap-2">
                 <Check className="size-4 text-[var(--yellow)]" /> You stay in
@@ -118,19 +118,19 @@ export function LandingPage() {
             <PainPoint
               icon={<MessageCircleQuestion />}
               title="Unclear wording"
-              copy="Plain-English context appears exactly when you need it."
+              copy="Plain-English context is designed to appear when you need it."
               color="bg-[var(--peach)]"
             />
             <PainPoint
               icon={<MousePointerClick />}
               title="Endless pages"
-              copy="Related questions stay together in a flow that makes sense."
+              copy="Related questions are designed to stay together in a clear flow."
               color="bg-[var(--sky)]"
             />
             <PainPoint
               icon={<Clock3 />}
               title="Easy to lose progress"
-              copy="Your answers stay on this device as you work."
+              copy="Draft answers are designed to stay on your device as you work."
               color="bg-[var(--mint)]"
             />
           </div>
@@ -183,8 +183,8 @@ export function LandingPage() {
                   Careful by design.
                 </p>
                 <p className="mt-5 max-w-xs leading-7">
-                  We show why a question matters, flag what needs attention, and
-                  keep every answer editable.
+                  We’re designing a flow that explains questions, flags what
+                  needs attention, and keeps answers editable.
                 </p>
               </div>
             </div>
@@ -200,17 +200,17 @@ export function LandingPage() {
               <TrustRow
                 icon={<LockKeyhole />}
                 title="Your answers stay with you"
-                copy="Nothing is sent or filed while you are only filling out the draft."
+                copy="The planned draft stays on your device until you choose to continue."
               />
               <TrustRow
                 icon={<HeartHandshake />}
                 title="Human review has a purpose"
-                copy="Repetitive steps can be handled for you; judgment and final approval remain visible to you."
+                copy="The planned workflow keeps judgment and final approval visible to you."
               />
               <TrustRow
                 icon={<FileCheck2 />}
                 title="Review before anything moves"
-                copy="See a clear summary, return to any section, and correct answers at any time."
+                copy="The planned review lets you check and correct answers before anything moves."
               />
             </div>
           </div>
@@ -221,17 +221,15 @@ export function LandingPage() {
         <div className="page-shell text-center">
           <Sparkles className="mx-auto size-9 text-[var(--primary)]" />
           <h2 className="display mx-auto mt-5 max-w-3xl text-4xl tracking-[-.04em] sm:text-6xl">
-            Ready to make a difficult form feel manageable?
+            Want to try VisaFile when it opens?
           </h2>
           <p className="mx-auto mt-5 max-w-xl leading-7 text-[var(--muted)]">
-            You can stop and return anytime. The guided intake takes about 12–15
-            minutes to explore.
+            VisaFile is not available yet. Request early access and we’ll let
+            you know when there’s an opportunity to try it.
           </p>
-          <Button asChild size="lg" className="mt-8">
-            <Link href="/intake">
-              Start my DS-160 <ArrowRight className="size-5" />
-            </Link>
-          </Button>
+          <div id="early-access" className="mx-auto mt-8 max-w-lg scroll-mt-8">
+            <EarlyAccessForm />
+          </div>
         </div>
       </section>
 
@@ -240,8 +238,8 @@ export function LandingPage() {
           <Brand />
           <p className="max-w-xl text-xs leading-5 text-[var(--muted)]">
             VisaFile is not affiliated with the U.S. government. It does not
-            provide legal advice or submit a DS-160 while you are only filling
-            out the draft.
+            provide legal advice. Requesting access does not start or submit a
+            DS-160 application.
           </p>
         </div>
       </footer>

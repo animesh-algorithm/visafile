@@ -1,5 +1,17 @@
 # VisaFile web
 
+## Public early access launch
+
+Deploy this Next.js app as a Vercel project with `visafile-web` as its root directory.
+Apply `supabase/early-access.sql` to the existing Supabase project, then configure
+`NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`,
+`EARLY_ACCESS_FROM_EMAIL` (a verified Resend sender), and `EARLY_ACCESS_TO_EMAIL`
+in Vercel. Set `EARLY_ACCESS_MODE=true` locally when testing the public gate.
+Vercel deployments close the intake, application pages, and application API routes.
+The public early access endpoint accepts name and email only. It saves the request
+before sending separate owner and applicant emails. Failed sends are retried if the
+same address requests access again. The intake prototype remains available locally.
+
 A frontend-only prototype for VisaFile: a consumer-friendly landing page and a guided DS-160 intake. It is deliberately isolated from the automation MVP in `../mvp`.
 
 ## Run locally
