@@ -300,13 +300,13 @@ function HeroDocument() {
             </span>
             <div>
               <p className="text-xs font-bold text-[var(--muted)]">
-                YOUR APPLICATION
+                INTAKE PREVIEW
               </p>
               <p className="font-extrabold">Personal information</p>
             </div>
           </div>
           <span className="rounded-full bg-[var(--mint)] px-3 py-1 text-xs font-bold text-[var(--success)]">
-            Saved
+            Example
           </span>
         </div>
         <div className="py-7">
@@ -324,10 +324,10 @@ function HeroDocument() {
         </div>
         <div className="flex items-center justify-between border-t border-[var(--border)] pt-5">
           <span className="text-xs font-bold text-[var(--muted)]">
-            18% complete
+            Sample progress
           </span>
           <span className="rounded-full bg-[var(--primary)] px-5 py-3 text-sm font-bold text-white">
-            Continue →
+            Next section →
           </span>
         </div>
       </div>
