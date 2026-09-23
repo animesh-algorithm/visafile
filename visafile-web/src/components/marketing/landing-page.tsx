@@ -1,4 +1,5 @@
 import { EarlyAccessForm } from "@/components/marketing/early-access-form";
+import { DemoVideo } from "@/components/marketing/demo-video";
 import {
   ArrowRight,
   Check,
@@ -48,7 +49,7 @@ export function LandingPage() {
         <div className="hidden items-center gap-8 text-sm font-bold md:flex">
           <a href="#how-it-works">How it works</a>
           <a href="#why-visafile">Why VisaFile</a>
-          <a href="#questions">Questions</a>
+          <a href="#demo">Watch demo</a>
         </div>
         <Button asChild size="sm">
           <a href="#early-access">
@@ -77,10 +78,10 @@ export function LandingPage() {
                 </a>
               </Button>
               <a
-                href="#how-it-works"
+                href="#demo"
                 className="inline-flex min-h-14 items-center justify-center px-5 text-sm font-bold text-white underline decoration-white/40 underline-offset-4 hover:decoration-white"
               >
-                See how it works
+                Watch the demo
               </a>
             </div>
             <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/76">
@@ -133,6 +134,27 @@ export function LandingPage() {
               copy="Draft answers are designed to stay on your device as you work."
               color="bg-[var(--mint)]"
             />
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="demo"
+        className="scroll-mt-8 bg-[var(--cream)] py-20 sm:py-28"
+      >
+        <div className="page-shell">
+          <div className="mx-auto mb-10 max-w-2xl text-center">
+            <p className="eyebrow text-[var(--primary)]">Product preview</p>
+            <h2 className="display mt-4 text-4xl tracking-[-.035em] sm:text-5xl">
+              See what we’re building.
+            </h2>
+            <p className="mt-4 leading-7 text-[var(--muted)]">
+              Watch a walkthrough of the VisaFile prototype. The guided intake
+              is not open to the public yet.
+            </p>
+          </div>
+          <div className="mx-auto max-w-4xl">
+            <DemoVideo />
           </div>
         </div>
       </section>
