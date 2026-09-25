@@ -1,13 +1,10 @@
 # DS-160 MVP
 
-End-to-end loop from [spec.md](../spec.md): schema-driven intake → API → worker → live CAPTCHA/corrections → confirmation PDF.
-
-Root `src/`, `fixtures/`, and `schema/` are **not modified**.
+Schema-driven intake → API → worker → live CAPTCHA/corrections → confirmation PDF.
 
 ## Quick start (no Docker) — `LOCAL_STACK=true`
 
 ```bash
-cd mvp
 cp .env.example .env
 npm install
 npm run db:migrate
@@ -48,7 +45,7 @@ Worker restart during `awaiting_captcha`: BullMQ lock is 15m; if the worker proc
 ## Layout
 
 ```
-mvp/
+./
   shared/schema/   JSON Schema (FE + BE source of truth)
   shared/storage/  PdfStorage interface (local | S3/MinIO)
   frontend/        Schema-driven form + correction UI
